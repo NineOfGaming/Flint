@@ -8,6 +8,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
+import org.jspecify.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -25,7 +26,7 @@ public final class FlintUpdate {
     private static final String MODRINTH_URL = "https://modrinth.com/mod/flint/versions";
     private static final String MOD_VERSION = getCurrentVersion();
     private static final String UNKNOWN_VERSION = "unknown";
-    private static String latestVersion;
+    private static @Nullable String latestVersion = null;
 
     private FlintUpdate() {
     }
@@ -42,8 +43,11 @@ public final class FlintUpdate {
                     .thenApply(HttpResponse::body)
                     .thenAccept(responseBody -> {
                         JsonObject jsonResponse = JsonParser.parseString(responseBody).getAsJsonObject();
-                        latestVersion = jsonResponse.get("tag_name").getAsString();
-                        LOGGER.info("Latest version: {}", latestVersion);
+                        if (!jsonResponse.has("tag_name")) {
+                            throw new RuntimeException("Expected a response with tag_name, instead got: " + responseBody);
+                        }
+                        latestVersion = jsonResponse.get("tag_name").getAsString().substring(1);
+                        LOGGER.info("Latest version: v{}", latestVersion);
                     })
                     .exceptionally(e -> {
                         LOGGER.error("Error while fetching version", e);
@@ -71,25 +75,23 @@ public final class FlintUpdate {
 
 
     public static void sendUpdateMessage() {
-        if (MOD_VERSION.equals(latestVersion) || MOD_VERSION.equals(UNKNOWN_VERSION)) {
+        if (latestVersion == null || MOD_VERSION.equals(latestVersion) || MOD_VERSION.equals(UNKNOWN_VERSION)) {
             return;
         }
 
         try {
-            // Latest version starts with a v.
-            int latestVersion = Integer.parseInt(FlintUpdate.latestVersion.substring(1));
-            // Current version does not start with a v.
-            int currentVersion = Integer.parseInt(MOD_VERSION);
+            int latest = Integer.parseInt(latestVersion);
+            int current = Integer.parseInt(MOD_VERSION);
 
             // Ignore if outdated for less than 5 versions.
-            if (latestVersion - currentVersion < 5) {
+            if (latest - current < 5) {
                 return;
             }
             // We are outdated, inform the user.
             if (Flint.getClient().player != null) {
                 Flint.getUser().sendMessage(new InfoMessage("flint.update",
                         Component.text("v" + MOD_VERSION),
-                        Component.text(FlintUpdate.latestVersion),
+                        Component.text("v" + latest),
                         Component.translatable("flint.update.link", PaletteColor.SKY_LIGHT_2)
                                 .clickEvent(ClickEvent.openUrl(MODRINTH_URL))
                                 .hoverEvent(HoverEvent.showText(Component.text(MODRINTH_URL, PaletteColor.GRAY_LIGHT)))
