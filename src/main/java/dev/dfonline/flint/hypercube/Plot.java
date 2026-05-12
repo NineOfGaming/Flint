@@ -3,6 +3,7 @@ package dev.dfonline.flint.hypercube;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -16,6 +17,7 @@ public class Plot {
     private PlotSize size;
     private boolean hasUnderground = false;
     private final String owner;
+    private @Nullable PlayerProfile ownerProfile;
 
     public Plot(int id, Text name, String handle, boolean whitelisted, String owner) {
         this.id = id;
@@ -56,6 +58,10 @@ public class Plot {
         return Objects.requireNonNullElse(this.size, PlotSize.MASSIVE);
     }
 
+    public @Nullable PlotSize getDetectedSize() {
+        return this.size;
+    }
+
     public boolean isSizeKnown() {
         return this.size != null;
     }
@@ -76,18 +82,58 @@ public class Plot {
         return this.owner;
     }
 
+    @SuppressWarnings("unused")
+    public String getOwnerName() {
+        return this.owner;
+    }
+
+    public @Nullable PlayerProfile getOwnerProfile() {
+        return this.ownerProfile;
+    }
+
+    public void setOwnerProfile(@Nullable PlayerProfile ownerProfile) {
+        this.ownerProfile = ownerProfile;
+    }
+
+    public PlayerRanks getOwnerRanks() {
+        if (this.ownerProfile == null) {
+            return PlayerRanks.EMPTY;
+        }
+
+        return this.ownerProfile.ranks();
+    }
+
     public boolean isPosInCodeSpace(BlockPos pos) {
+        if (this.devOrigin == null) {
+            return false;
+        }
+
+        PlotSize size = this.getSize();
         int x = pos.getX();
         int z = pos.getZ();
 
-        return x < this.devOrigin.getX()
-                && x >= this.devOrigin.getX() - this.size.getCodeWidth()
+        return x <= this.devOrigin.getX()
+                && x >= this.devOrigin.getX() - size.getCodeWidth() + 1
                 && z >= this.devOrigin.getZ()
-                && z <= this.devOrigin.getZ() + this.size.getCodeLength();
+                && z <= this.devOrigin.getZ() + size.getCodeLength();
+    }
+
+    public @Nullable String getCodeBoundsString() {
+        if (this.devOrigin == null) {
+            return null;
+        }
+
+        PlotSize size = this.getSize();
+        int minX = this.devOrigin.getX() - size.getCodeWidth() + 1;
+        int maxX = this.devOrigin.getX();
+        int minZ = this.devOrigin.getZ();
+        int maxZ = this.devOrigin.getZ() + size.getCodeLength();
+
+        return "(" + minX + ", " + minZ + ") -> (" + maxX + ", " + maxZ + ")";
     }
 
     public String toReadableString() {
-        return "ID " + this.id + ", name " + this.name.getString() + ", handle " + this.handle + ", whitelisted " + this.whitelisted + ", origin " + this.devOrigin + ", owner " + this.owner;
+        return "ID " + this.id + ", name " + this.name.getString() + ", handle " + this.handle + ", whitelisted " + this.whitelisted + ", origin " + this.devOrigin + ", owner " + this.owner + ", owner ranks " + this.getOwnerRanks().toReadableString();
     }
 
     @Override

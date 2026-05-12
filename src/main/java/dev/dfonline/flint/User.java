@@ -5,6 +5,8 @@ import dev.dfonline.flint.feature.trait.ModeSwitchListeningFeature;
 import dev.dfonline.flint.feature.trait.PlotSwitchListeningFeature;
 import dev.dfonline.flint.hypercube.Mode;
 import dev.dfonline.flint.hypercube.Node;
+import dev.dfonline.flint.hypercube.PlayerProfile;
+import dev.dfonline.flint.hypercube.PlayerRanks;
 import dev.dfonline.flint.hypercube.Plot;
 import dev.dfonline.flint.util.message.Message;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -20,6 +22,7 @@ public final class User {
     private @NotNull Mode mode = Mode.NONE;
     private @Nullable Plot plot;
     private @Nullable Node node;
+    private @Nullable PlayerProfile profile;
     private int nodeId;
 
     public ClientPlayerEntity getPlayer() {
@@ -53,6 +56,23 @@ public final class User {
                 ((PlotSwitchListeningFeature) feature).onSwitchPlot(this.plot, plot)
         );
         this.plot = plot;
+    }
+
+    public @Nullable PlayerProfile getProfile() {
+        return this.profile;
+    }
+
+    public PlayerRanks getRanks() {
+        if (this.profile == null) {
+            return PlayerRanks.EMPTY;
+        }
+
+        return this.profile.ranks();
+    }
+
+    @ApiStatus.Internal
+    public void setProfile(@Nullable PlayerProfile profile) {
+        this.profile = profile;
     }
 
     public @Nullable Node getNode() {

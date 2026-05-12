@@ -34,6 +34,22 @@ public final class CommandSenderFeature implements PacketListeningFeature, Ticke
         return commandQueue.size();
     }
 
+    public static boolean isRateLimited() {
+        return rateLimiter.isRateLimited();
+    }
+
+    public static int rateLimitCount() {
+        return rateLimiter.getCount();
+    }
+
+    public static int rateLimitThreshold() {
+        return rateLimiter.getThreshold();
+    }
+
+    public static int rateLimitIncrementStep() {
+        return rateLimiter.getIncrementStep();
+    }
+
     @Override
     public boolean alwaysOn() {
         return true;

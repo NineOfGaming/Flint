@@ -9,7 +9,7 @@ Core library for DiamondFire mods, allowing them to share a common codebase and 
 
 ---
 
-> [!WARNING]  
+> [!WARNING]
 > README is unfinished and may contain incorrect, outdated, or missing information.
 
 ## Features
@@ -35,7 +35,7 @@ Mods can define features, classes that implement a **FeatureTrait**.
 
 #### Registering features
 
-To register a feature, in your mod's onInitializeClient,
+To register a feature, in your mod's onInitializeClient,  
 call **FlintAPI.registerFeature(FeatureTrait)** or **FlintAPI.registerFeature(FeatureTrait...)**.
 
 ```java
@@ -85,8 +85,16 @@ public void error() {
 
 ### Mode Tracking
 
-Flint tracks the user's current mode and optionally the plot and node they are on, you can access this info using
+Flint tracks the user's current mode and optionally the plot and node they are on, you can access this info using  
 **Flint.getUser().getMode()**, **Flint.getUser().getPlot()**, and **Flint.getUser().getNode()**.
+
+User profile data can be enabled separately with **FlintAPI.fetchUserProfileWithWhois()**,  
+making the user's ranks and other data available through **Flint.getUser().getProfile()** and **Flint.getUser().getRanks()**.
+
+Plot owner profile data can be enabled with **FlintAPI.fetchPlotOwnerProfileWithWhois()**.
+
+You can also request arbitrary player data with **FlintAPI.requestPlayerLocation(String)** and **FlintAPI.requestPlayerProfile(String)**,  
+or omit the argument to request data for the current user.
 
 ```java
 public boolean shouldShowPlotOverlay() {
@@ -94,18 +102,21 @@ public boolean shouldShowPlotOverlay() {
 }
 ```
 
-> [!IMPORTANT]  
-> You only have access to the user's plot if **FlintAPI.confirmLocationWithLocate()** was called, if you are not
-> calling this on your own, remember that you will get null when calling **Flint.getUser().getPlot()**!
+> [!IMPORTANT]
+> You only have access to the user's plot if **FlintAPI.confirmLocationWithLocate()** was called,  
+> if you are not calling this on your own, remember that you will get null when calling **Flint.getUser().getPlot()**!
 >
-> This makes Flint run /locate every time a suspected mode change occurs.
+> **FlintAPI.fetchPlotOwnerProfileWithWhois()** also enables location confirmation because Flint needs the plot owner before it
+> can fetch their profile.
+>
+> This makes Flint run /locate every time a suspected mode change occurs.  
 > Not only does this give you access to the plot the user is on, but it also makes mode tracking more accurate.
 
 ## ActionDump
 
-The actiondump is stored in separate files for each color mode access them in the flint files,
-for a & color syntax actiondump you would use `FlintFile.ACTION_DUMP_AMPERSAND.getPath()`,
-you need to read the files on your own.
+The actiondump is stored in separate files for each color mode access them in the flint files,  
+for a & color syntax actiondump you would use `FlintFile.ACTION_DUMP_AMPERSAND.getPath()`,  
+you need to read the files on your own.  
 To receive each version log into Node Beta and run `/getactiondump <color mode>`.
 
 ### DFItem
@@ -116,18 +127,28 @@ TODO
 
 #### Mode
 
-An enum containing every mode the user can be in,
-you can check whether a mode means the user is in a plot
+An enum containing every mode the user can be in,  
+you can check whether a mode means the user is in a plot  
 or if they are in a mode that allows them to modify a plot with `Mode.isInPlot()` and `Mode.isEditor()` respectively.
 
 #### Plot
 
-A record that stores surface level information about a plot, such as the plot's name, id, and handle.
+A class that stores surface level information about a plot, such as the plot's name, id, and handle.  
+When available, plot owner profile data can be read with `Plot.getOwnerProfile()` and `Plot.getOwnerRanks()`.
+
+#### PlayerProfile
+
+Stores profile data parsed from `/whois`, including ranks, badges, pronouns, join date, and about text.  
+Ranks are exposed as both visible `PlayerRank` entries and category levels through `PlayerRanks`.
+
+#### PlayerLocation
+
+Stores location data parsed from `/locate`, including mode, plot, node, and node id.
 
 #### Node
 
-An enum of every node on DiamondFire, you can get a node's ID with `Node.getId()` or its name with `Node.getName()`. Get
-a node by its id or name using `Node.fromId()` or `Node.fromName()` respectively.
+An enum of every node on DiamondFire, you can get a node's ID with `Node.getId()` or its name with `Node.getName()`.  
+Get a node by its id or name using `Node.fromId()` or `Node.fromName()` respectively.
 
 #### Toaster
 
@@ -147,7 +168,7 @@ on [Modrinth](https://modrinth.com/mod/flint).
 Use the Modrinth Maven repository to depend on Flint in your project.
 
 ### What version?
-Flint updates on a **rolling release** schedule, once a push is made to the main branch, a new version is released.
+Flint updates on a **rolling release** schedule, once a push is made to the main branch, a new version is released.  
 The latest release will be the most recent GitHub release, or other most recent release on Modrinth.
 
 ### Build Script Example

@@ -3,6 +3,7 @@ package dev.dfonline.flint.feature.impl;
 import dev.dfonline.flint.feature.trait.PacketListeningFeature;
 import dev.dfonline.flint.hypercube.Mode;
 import dev.dfonline.flint.hypercube.Node;
+import dev.dfonline.flint.hypercube.PlayerLocation;
 import dev.dfonline.flint.hypercube.Plot;
 import dev.dfonline.flint.util.Toaster;
 import dev.dfonline.flint.util.result.EventResult;
@@ -29,7 +30,7 @@ public class LocateFeature implements PacketListeningFeature {
 
     private static final Pattern LOCATE_PATTERN = Pattern.compile("\\s{39}\\n(?:You are|(?<username>[A-Za-z0-9_]+) is) currently (?<mode>playing|coding|building|at spawn|existing)(?:(?: on:\\n)?\\n)?(?:→ (?<plotName>.+) \\[(?<plotID>\\d+)](?: \\[)?(?<plotHandle>[a-z0-9_-]+)?]? ?(?:\\n→ (?<status>.++))?\\n→ Owner: (?<owner>[A-Za-z0-9_]+)(?<whitelisted> \\[Whitelisted])?)? ?\\n?→ Server: (?<node>[\\w ?]+)\\n\\s{39}", Pattern.MULTILINE);
     private static final Pattern NODE_ID_PATTERN = Pattern.compile("(?<nodeId>\\d+)$");
-    private static final Queue<Pair<String, CompletableFuture<LocateResult>>> locateRequests = new LinkedList<>();
+    private static final Queue<Pair<String, CompletableFuture<PlayerLocation>>> locateRequests = new LinkedList<>();
     private static boolean awaitingResponse = false;
     private static final int LOCATE_TIMEOUT_SECONDS = 3;
 
@@ -38,9 +39,10 @@ public class LocateFeature implements PacketListeningFeature {
         return true;
     }
 
-    public static CompletableFuture<LocateResult> requestLocate(String playerName) {
-        CompletableFuture<LocateResult> locateResult = new CompletableFuture<>();
-        Pair<String, CompletableFuture<LocateResult>> requestPair = Pair.of(playerName, locateResult);
+    public static CompletableFuture<PlayerLocation> requestLocate(String playerName) {
+        String normalizedPlayerName = playerName.trim();
+        CompletableFuture<PlayerLocation> locateResult = new CompletableFuture<>();
+        Pair<String, CompletableFuture<PlayerLocation>> requestPair = Pair.of(normalizedPlayerName, locateResult);
 
         locateRequests.add(requestPair);
 
@@ -67,7 +69,7 @@ public class LocateFeature implements PacketListeningFeature {
     private static void processNextRequestIfReady() {
         if (!awaitingResponse && !locateRequests.isEmpty()) {
             awaitingResponse = true;
-            Pair<String, CompletableFuture<LocateResult>> currentRequest = locateRequests.peek();
+            Pair<String, CompletableFuture<PlayerLocation>> currentRequest = locateRequests.peek();
 
             CommandSenderFeature.queue("locate " + currentRequest.first());
         }
@@ -83,7 +85,7 @@ public class LocateFeature implements PacketListeningFeature {
             return EventResult.PASS;
         }
 
-        Pair<String, CompletableFuture<LocateResult>> currentRequest = locateRequests.peek();
+        Pair<String, CompletableFuture<PlayerLocation>> currentRequest = locateRequests.peek();
         String playerName = currentRequest.first();
 
         String text = message.content().getString();
@@ -94,7 +96,7 @@ public class LocateFeature implements PacketListeningFeature {
             return EventResult.PASS;
         }
 
-        LocateResult result = this.parseLocateResponse(matcher, playerName);
+        PlayerLocation result = this.parseLocateResponse(matcher, playerName);
 
         if (result == null) {
             return EventResult.PASS;
@@ -109,7 +111,7 @@ public class LocateFeature implements PacketListeningFeature {
         return EventResult.CANCEL;
     }
 
-    private LocateResult parseLocateResponse(Matcher matcher, String playerName) {
+    private PlayerLocation parseLocateResponse(Matcher matcher, String playerName) {
         if (matcher.group("mode") == null || matcher.group("node") == null) {
             return null;
         }
@@ -138,7 +140,7 @@ public class LocateFeature implements PacketListeningFeature {
         Matcher nodeIdMatcher = NODE_ID_PATTERN.matcher(matcher.group("node"));
         int nodeId = nodeIdMatcher.find() ? Integer.parseInt(nodeIdMatcher.group("nodeId")) : 1;
 
-        return new LocateResult(username, mode, plot, node, nodeId);
+        return new PlayerLocation(username, mode, plot, node, nodeId);
     }
 
     private static @Nullable Plot parsePlot(Matcher matcher) {
@@ -157,9 +159,6 @@ public class LocateFeature implements PacketListeningFeature {
         String owner = matcher.group("owner");
 
         return new Plot(plotID, Text.literal(plotName), plotHandle, whitelisted, owner);
-    }
-
-    public record LocateResult(String player, Mode mode, @Nullable Plot plot, Node node, int nodeId) {
     }
 
 }

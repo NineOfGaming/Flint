@@ -10,7 +10,9 @@ public final class Toaster {
     }
 
     public static void toast(Component title, Component description) {
-        Flint.getClient().getToastManager().add(SystemToast.create(Flint.getClient(), SystemToast.Type.UNSECURE_SERVER_WARNING, Flint.AUDIENCE.asNative(title), Flint.AUDIENCE.asNative(description)));
+        Flint.getClient().execute(() ->
+                Flint.getClient().getToastManager().add(SystemToast.create(Flint.getClient(), SystemToast.Type.UNSECURE_SERVER_WARNING, Flint.AUDIENCE.asNative(title), Flint.AUDIENCE.asNative(description)))
+        );
     }
 
 }
