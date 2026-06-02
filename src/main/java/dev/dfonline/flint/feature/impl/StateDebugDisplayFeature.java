@@ -12,8 +12,9 @@ import dev.dfonline.flint.hypercube.Plot;
 import dev.dfonline.flint.hypercube.PlotSize;
 import dev.dfonline.flint.util.ObjectUtil;
 import dev.dfonline.flint.util.PaletteColor;
-import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.text.Text;
 
@@ -26,6 +27,8 @@ public class StateDebugDisplayFeature implements RenderedFeature {
 
     private static final int STARTING_Y = 5;
     private static final int STARTING_X = 5;
+    private static final int END_PADDING = 5;
+    private static final String TRUNCATION_SUFFIX = "...";
 
     @Override
     public void render(DrawContext draw, RenderTickCounter renderTickCounter) {
@@ -55,7 +58,7 @@ public class StateDebugDisplayFeature implements RenderedFeature {
         PlayerProfile profile = user.getProfile();
 
         texts.add(formatHeader("Player:"));
-        texts.add(formatValue("Name", ObjectUtil.toString(player, ClientPlayerEntity::getNameForScoreboard)));
+        texts.add(formatValue("Name", ObjectUtil.toString(player, playerEntity -> playerEntity.getGameProfile().name())));
         texts.add(formatValue("Position", ObjectUtil.toString(player, playerEntity -> playerEntity.getBlockPos().toShortString())));
         addProfileState(texts, profile, user.getRanks());
     }
@@ -118,7 +121,7 @@ public class StateDebugDisplayFeature implements RenderedFeature {
     private static Text formatValue(String key, String value) {
         return literal(key).withColor(PaletteColor.PURPLE.value())
                 .append(literal(" = ").withColor(PaletteColor.GRAY_DARK.value()))
-                .append(literal(value).withColor(PaletteColor.PURPLE_LIGHT.value()));
+                .append(literal(truncateValue(key, value)).withColor(PaletteColor.PURPLE_LIGHT.value()));
     }
 
     private static String inCodeSpace(Plot plot, ClientPlayerEntity player) {
@@ -133,14 +136,21 @@ public class StateDebugDisplayFeature implements RenderedFeature {
         return value == null || value.isBlank() ? "none" : value;
     }
 
-    @SuppressWarnings("unused")
-    private static String truncate(String value) {
-        int maxLength = 80;
-        if (value.length() <= maxLength) {
+    private static String truncateValue(String key, String value) {
+        TextRenderer textRenderer = Flint.getClient().textRenderer;
+        int valueStartX = STARTING_X + STARTING_Y + textRenderer.getWidth(key + " = ");
+        int maxValueWidth = Flint.getClient().getWindow().getScaledWidth() - valueStartX - END_PADDING;
+
+        if (maxValueWidth <= 0 || textRenderer.getWidth(value) <= maxValueWidth) {
             return value;
         }
 
-        return value.substring(0, maxLength - 3) + "...";
+        int suffixWidth = textRenderer.getWidth(TRUNCATION_SUFFIX);
+        if (maxValueWidth <= suffixWidth) {
+            return TRUNCATION_SUFFIX;
+        }
+
+        return textRenderer.trimToWidth(value, maxValueWidth - suffixWidth) + TRUNCATION_SUFFIX;
     }
 
     @Override

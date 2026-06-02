@@ -15,6 +15,7 @@ import dev.dfonline.flint.util.Logger;
 import dev.dfonline.flint.util.result.EventResult;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.ClearTitleS2CPacket;
@@ -39,13 +40,15 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
     private static final String DEV_MODE_MESSAGE = "» You are now in dev mode.";
     private static final String BUILD_MODE_MESSAGE = "» You are now in build mode.";
     private static final String JOINED_GAME_PREFIX = "» Joined game: ";
-    private static final int DEV_SPAWN_OFFSET = 10;
+    private static final int DEV_SPAWN_OFFSET_X = 11;
+    private static final int DEV_SPAWN_OFFSET_Z = 10;
     private static final int GROUND_LEVEL = 49;
 
     private PendingModeSwitchAction pendingAction = PendingModeSwitchAction.CLEAR_TITLE;
     private static boolean hasQueuedLocate = false;
     private static Mode queuedMode = null;
     private static boolean sentUpdateMessageThisSession = false;
+    private static String requestedUserProfileName = null;
 
     @Override
     public boolean alwaysOn() {
@@ -63,34 +66,49 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
 
         if (FlintAPI.shouldConfirmLocationWithLocate() && mode != Mode.NONE) {
             hasQueuedLocate = true;
-        } else {
-            Flint.getUser().setNode(null);
-            Flint.getUser().setPlot(null);
-            Flint.getUser().setMode(mode);
-
-            if (mode != Mode.NONE && FlintAPI.shouldFetchUserProfileWithWhois()) {
-                requestCurrentUserProfile();
-            }
-        }
-    }
-
-    public static void confirmCurrentLocation() {
-        if (Flint.getClient().player == null) {
             return;
         }
 
-        String name = Flint.getUser().getPlayer().getNameForScoreboard();
-        LocateFeature.requestLocate(name).thenAccept(locate ->
+        Flint.getUser().setNode(null);
+        Flint.getUser().setPlot(null);
+        Flint.getUser().setMode(mode);
+    }
+
+    public static void confirmCurrentLocation() {
+        ClientPlayerEntity player = Flint.getClient().player;
+        if (player == null) {
+            return;
+        }
+
+        LocateFeature.requestLocate(player.getGameProfile().name()).thenAccept(locate ->
                 Flint.getClient().execute(() -> applyLocateResult(locate))
         );
     }
 
-    static void requestCurrentUserProfile() {
-        if (Flint.getClient().player == null) {
+    static void ensureCurrentUserProfile() {
+        if (!FlintAPI.shouldFetchUserProfileWithWhois()) {
             return;
         }
 
-        requestUserProfile(Flint.getUser().getPlayer().getNameForScoreboard());
+        ClientPlayerEntity player = Flint.getClient().player;
+        if (player == null) {
+            return;
+        }
+
+        String userName = player.getGameProfile().name();
+        PlayerProfile currentProfile = Flint.getUser().getProfile();
+        if (currentProfile != null && currentProfile.userName().equalsIgnoreCase(userName)) {
+            requestedUserProfileName = userName;
+            return;
+        }
+
+        Flint.getUser().setProfile(null);
+        if (requestedUserProfileName != null && requestedUserProfileName.equalsIgnoreCase(userName)) {
+            return;
+        }
+
+        requestedUserProfileName = userName;
+        requestUserProfile(userName);
     }
 
     static void requestCurrentPlotOwnerProfile() {
@@ -143,6 +161,8 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
     @Override
     public void tick() {
         if (Flint.getClient().player != null) {
+            ensureCurrentUserProfile();
+
             if (hasQueuedLocate) {
                 hasQueuedLocate = false;
                 confirmCurrentLocation();
@@ -171,8 +191,15 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
     }
 
     @Override
+    public void onJoin() {
+        requestedUserProfileName = null;
+        ensureCurrentUserProfile();
+    }
+
+    @Override
     public void onDisconnect() {
         WhoisFeature.clearCache();
+        requestedUserProfileName = null;
         setMode(Mode.NONE);
         sentUpdateMessageThisSession = false;
     }
@@ -188,7 +215,7 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
         Vec3i newOrigin;
         if (locate.mode() == Mode.DEV) {
             BlockPos blockpos = Flint.getUser().getPlayer().getBlockPos();
-            newOrigin = new Vec3i(blockpos.getX() + DEV_SPAWN_OFFSET + 1, GROUND_LEVEL, blockpos.getZ() - DEV_SPAWN_OFFSET);
+            newOrigin = new Vec3i(blockpos.getX() + DEV_SPAWN_OFFSET_X, GROUND_LEVEL, blockpos.getZ() - DEV_SPAWN_OFFSET_Z);
         } else {
             newOrigin = null;
         }
@@ -206,16 +233,11 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
             Flint.getUser().setPlot(null);
         }
 
-        requestEnabledProfileData(locate);
+        requestEnabledPlotOwnerProfile(locate);
         Flint.getUser().setMode(locate.mode());
     }
 
-    private static void requestEnabledProfileData(PlayerLocation locate) {
-        CompletableFuture<PlayerProfile> userProfile = null;
-        if (FlintAPI.shouldFetchUserProfileWithWhois()) {
-            userProfile = requestUserProfile(locate.player());
-        }
-
+    private static void requestEnabledPlotOwnerProfile(PlayerLocation locate) {
         if (!FlintAPI.shouldFetchPlotOwnerProfileWithWhois()) {
             return;
         }
@@ -226,7 +248,7 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
         }
 
         if (plot.getOwner().equalsIgnoreCase(locate.player())) {
-            CompletableFuture<PlayerProfile> ownerProfile = userProfile == null ? WhoisFeature.requestWhois(locate.player()) : userProfile;
+            CompletableFuture<PlayerProfile> ownerProfile = WhoisFeature.requestWhois(locate.player());
             ownerProfile.thenAccept(profile ->
                     Flint.getClient().execute(() -> setCurrentPlotOwnerProfile(profile))
             );
@@ -236,6 +258,7 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
         requestPlotOwnerProfile(plot);
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     private static CompletableFuture<PlayerProfile> requestUserProfile(String userName) {
         CompletableFuture<PlayerProfile> userProfile = WhoisFeature.requestWhois(userName);
         userProfile.thenAccept(profile -> Flint.getClient().execute(() -> setCurrentUserProfile(profile)));
@@ -252,7 +275,9 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
     }
 
     private static void setCurrentUserProfile(PlayerProfile profile) {
-        if (Flint.getClient().player != null && Flint.getClient().player.getNameForScoreboard().equalsIgnoreCase(profile.userName())) {
+        ClientPlayerEntity player = Flint.getClient().player;
+        if (player != null && player.getGameProfile().name().equalsIgnoreCase(profile.userName())) {
+            requestedUserProfileName = profile.userName();
             Flint.getUser().setProfile(profile);
         }
     }

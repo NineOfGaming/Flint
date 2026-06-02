@@ -40,9 +40,8 @@ public class LocateFeature implements PacketListeningFeature {
     }
 
     public static CompletableFuture<PlayerLocation> requestLocate(String playerName) {
-        String normalizedPlayerName = playerName.trim();
         CompletableFuture<PlayerLocation> locateResult = new CompletableFuture<>();
-        Pair<String, CompletableFuture<PlayerLocation>> requestPair = Pair.of(normalizedPlayerName, locateResult);
+        Pair<String, CompletableFuture<PlayerLocation>> requestPair = Pair.of(playerName, locateResult);
 
         locateRequests.add(requestPair);
 

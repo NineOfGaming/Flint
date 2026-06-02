@@ -145,7 +145,7 @@ public final class FlintAPI {
             return null;
         }
 
-        return Flint.getClient().player.getNameForScoreboard();
+        return Flint.getClient().player.getGameProfile().name();
     }
 
     private static <T> CompletableFuture<T> noClientPlayerFuture() {
