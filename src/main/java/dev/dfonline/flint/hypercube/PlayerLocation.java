@@ -11,9 +11,8 @@ import java.util.Objects;
  * @param mode   The player's current mode.
  * @param plot   The plot the player is on, if available.
  * @param node   The node the player is on, if known.
- * @param nodeId The numeric node id.
  */
-public record PlayerLocation(String player, Mode mode, @Nullable Plot plot, @Nullable Node node, int nodeId) {
+public record PlayerLocation(String player, Mode mode, @Nullable Plot plot, @Nullable Node node) {
 
     public PlayerLocation {
         Objects.requireNonNull(player, "player");
@@ -32,14 +31,8 @@ public record PlayerLocation(String player, Mode mode, @Nullable Plot plot, @Nul
         return this.plot;
     }
 
-    @SuppressWarnings("unused")
     public @Nullable Node getNode() {
         return this.node;
-    }
-
-    @SuppressWarnings("unused")
-    public int getNodeId() {
-        return this.nodeId;
     }
 
 }

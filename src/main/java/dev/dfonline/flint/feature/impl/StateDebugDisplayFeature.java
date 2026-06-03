@@ -40,7 +40,7 @@ public class StateDebugDisplayFeature implements RenderedFeature {
         texts.add(formatValue("In Plot", user.getMode().isInPlot() + ""));
         texts.add(formatValue("Is Editor", user.getMode().isEditor() + ""));
         texts.add(formatValue("Node", ObjectUtil.toString(user.getNode(), Node::getName)));
-        texts.add(formatValue("Node Id", user.getNodeId() + ""));
+        texts.add(formatValue("Node Id", ObjectUtil.toString(user.getNode(), Node::getId)));
         texts.add(formatValue("Command Queue", CommandSenderFeature.queueSize() + ""));
         texts.add(formatValue("Command Rate Limited", CommandSenderFeature.isRateLimited() + ""));
         texts.add(formatValue("Command Rate Limit", CommandSenderFeature.rateLimitCount() + "/" + CommandSenderFeature.rateLimitThreshold()));

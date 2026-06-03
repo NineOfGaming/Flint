@@ -26,12 +26,10 @@ public record PlayerRank(String name, PlayerRankCategory category, int level) {
         return this.name;
     }
 
-    @SuppressWarnings("unused")
     public PlayerRankCategory getCategory() {
         return this.category;
     }
 
-    @SuppressWarnings("unused")
     public int getLevel() {
         return this.level;
     }

@@ -85,6 +85,12 @@ public class FlintCommandFeature implements CommandFeature {
                             return 1;
                         })
                 )
+                .then(literal("clear_profile_cache")
+                        .executes(context -> {
+                            clearPlayerProfileCache();
+                            return 1;
+                        })
+                )
                 .then(literal("confirm_location")
                         .executes(context -> {
                             sendConfirmLocationWithLocateStatus();
@@ -185,6 +191,11 @@ public class FlintCommandFeature implements CommandFeature {
     private static void setDebugging(boolean debugging) {
         FlintAPI.setDebugging(debugging);
         Flint.getUser().sendMessage(new SuccessMessage(debugging ? "flint.command.flint.debug.enabled" : "flint.command.flint.debug.disabled"));
+    }
+
+    private static void clearPlayerProfileCache() {
+        FlintAPI.clearPlayerProfileCache();
+        Flint.getUser().sendMessage(new SuccessMessage("flint.command.flint.debug.profile_cache.cleared"));
     }
 
     private static void sendConfirmLocationWithLocateStatus() {

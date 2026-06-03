@@ -1,5 +1,6 @@
 package dev.dfonline.flint.hypercube;
 
+import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
@@ -7,36 +8,35 @@ import java.util.Objects;
 /**
  * Represents a visible badge on a DiamondFire player profile.
  *
- * @param text        The visible badge text or symbol.
- * @param name        The badge name from the hover text.
- * @param description The extra hover text below the badge name, if present.
+ * @param text        The visible badge text component or symbol.
+ * @param name        The badge name component from the hover text.
+ * @param description The extra hover text component below the badge name, if present.
  */
-public record PlayerBadge(String text, String name, @Nullable String description) {
+public record PlayerBadge(Text text, Text name, @Nullable Text description) {
 
     public PlayerBadge {
         Objects.requireNonNull(text, "text");
         Objects.requireNonNull(name, "name");
     }
 
-    public String getText() {
+    public Text getText() {
         return this.text;
     }
 
-    public String getName() {
+    public Text getName() {
         return this.name;
     }
 
-    @SuppressWarnings("unused")
-    public @Nullable String getDescription() {
+    public @Nullable Text getDescription() {
         return this.description;
     }
 
     public String toReadableString() {
-        if (this.description == null || this.description.isBlank()) {
-            return this.text + " " + this.name;
+        if (this.description == null || this.description.getString().isBlank()) {
+            return this.text.getString() + " " + this.name.getString();
         }
 
-        return this.text + " " + this.name + " - " + this.description;
+        return this.text.getString() + " " + this.name.getString() + " - " + this.description.getString();
     }
 
 }

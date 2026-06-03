@@ -26,7 +26,6 @@ import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 
 /**
@@ -49,6 +48,7 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
     private static Mode queuedMode = null;
     private static boolean sentUpdateMessageThisSession = false;
     private static String requestedUserProfileName = null;
+    private static boolean pendingUserProfileRequest = false;
 
     @Override
     public boolean alwaysOn() {
@@ -87,11 +87,13 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
 
     static void ensureCurrentUserProfile() {
         if (!FlintAPI.shouldFetchUserProfileWithWhois()) {
+            pendingUserProfileRequest = false;
             return;
         }
 
         ClientPlayerEntity player = Flint.getClient().player;
         if (player == null) {
+            pendingUserProfileRequest = true;
             return;
         }
 
@@ -99,15 +101,18 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
         PlayerProfile currentProfile = Flint.getUser().getProfile();
         if (currentProfile != null && currentProfile.userName().equalsIgnoreCase(userName)) {
             requestedUserProfileName = userName;
+            pendingUserProfileRequest = false;
             return;
         }
 
         Flint.getUser().setProfile(null);
         if (requestedUserProfileName != null && requestedUserProfileName.equalsIgnoreCase(userName)) {
+            pendingUserProfileRequest = false;
             return;
         }
 
         requestedUserProfileName = userName;
+        pendingUserProfileRequest = false;
         requestUserProfile(userName);
     }
 
@@ -161,7 +166,9 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
     @Override
     public void tick() {
         if (Flint.getClient().player != null) {
-            ensureCurrentUserProfile();
+            if (pendingUserProfileRequest) {
+                ensureCurrentUserProfile();
+            }
 
             if (hasQueuedLocate) {
                 hasQueuedLocate = false;
@@ -193,6 +200,7 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
     @Override
     public void onJoin() {
         requestedUserProfileName = null;
+        pendingUserProfileRequest = FlintAPI.shouldFetchUserProfileWithWhois();
         ensureCurrentUserProfile();
     }
 
@@ -200,6 +208,7 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
     public void onDisconnect() {
         WhoisFeature.clearCache();
         requestedUserProfileName = null;
+        pendingUserProfileRequest = false;
         setMode(Mode.NONE);
         sentUpdateMessageThisSession = false;
     }
@@ -210,7 +219,6 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
         }
 
         Flint.getUser().setNode(locate.node());
-        Flint.getUser().setNodeId(locate.nodeId());
 
         Vec3i newOrigin;
         if (locate.mode() == Mode.DEV) {
@@ -248,30 +256,29 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
         }
 
         if (plot.getOwner().equalsIgnoreCase(locate.player())) {
-            CompletableFuture<PlayerProfile> ownerProfile = WhoisFeature.requestWhois(locate.player());
-            ownerProfile.thenAccept(profile ->
-                    Flint.getClient().execute(() -> setCurrentPlotOwnerProfile(profile))
-            );
+            WhoisFeature.requestWhois(locate.player())
+                    .thenAccept(profile -> Flint.getClient().execute(() -> setCurrentPlotOwnerProfile(profile)));
             return;
         }
 
         requestPlotOwnerProfile(plot);
     }
 
-    @SuppressWarnings("UnusedReturnValue")
-    private static CompletableFuture<PlayerProfile> requestUserProfile(String userName) {
-        CompletableFuture<PlayerProfile> userProfile = WhoisFeature.requestWhois(userName);
-        userProfile.thenAccept(profile -> Flint.getClient().execute(() -> setCurrentUserProfile(profile)));
-        return userProfile;
+    private static void requestUserProfile(String userName) {
+        WhoisFeature.requestWhois(userName)
+                .whenComplete((profile, throwable) -> Flint.getClient().execute(() -> {
+                    if (throwable != null) {
+                        clearRequestedUserProfile(userName);
+                        return;
+                    }
+
+                    setCurrentUserProfile(profile);
+                }));
     }
 
-    @SuppressWarnings("UnusedReturnValue")
-    private static CompletableFuture<PlayerProfile> requestPlotOwnerProfile(Plot plot) {
-        CompletableFuture<PlayerProfile> ownerProfile = WhoisFeature.requestWhois(plot.getOwner());
-        ownerProfile.thenAccept(profile ->
-                Flint.getClient().execute(() -> setCurrentPlotOwnerProfile(profile))
-        );
-        return ownerProfile;
+    private static void requestPlotOwnerProfile(Plot plot) {
+        WhoisFeature.requestWhois(plot.getOwner())
+                .thenAccept(profile -> Flint.getClient().execute(() -> setCurrentPlotOwnerProfile(profile)));
     }
 
     private static void setCurrentUserProfile(PlayerProfile profile) {
@@ -279,6 +286,12 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
         if (player != null && player.getGameProfile().name().equalsIgnoreCase(profile.userName())) {
             requestedUserProfileName = profile.userName();
             Flint.getUser().setProfile(profile);
+        }
+    }
+
+    private static void clearRequestedUserProfile(String userName) {
+        if (requestedUserProfileName != null && requestedUserProfileName.equalsIgnoreCase(userName)) {
+            requestedUserProfileName = null;
         }
     }
 

@@ -5,6 +5,7 @@
   "flint.command.flint.clear_queue.empty": "No commands in the queue to clear",
   "flint.command.flint.debug.enabled": "Debugging enabled",
   "flint.command.flint.debug.disabled": "Debugging disabled",
+  "flint.command.flint.debug.profile_cache.cleared": "Cleared the player profile cache",
   "flint.command.flint.confirm_location.enabled": "Location confirmation enabled",
   "flint.command.flint.confirm_location.disabled": "Location confirmation disabled",
   "flint.command.flint.confirm_location.status.enabled.user": "Location confirmation is enabled",

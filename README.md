@@ -143,7 +143,7 @@ Ranks are exposed as both visible `PlayerRank` entries and category levels throu
 
 #### PlayerLocation
 
-Stores location data parsed from `/locate`, including mode, plot, node, and node id.
+Stores location data parsed from `/locate`, including mode, plot, and node.
 
 #### Node
 

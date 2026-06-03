@@ -18,7 +18,7 @@ public final class DebugReportUtil {
         report = appendValue(report, "Mode Enum", locate.mode().name());
         report = appendValue(report, "Node", locate.node() == null ? null : locate.node().getName());
         report = appendValue(report, "Node Enum", locate.node() == null ? null : locate.node().name());
-        report = appendValue(report, "Node Id", locate.nodeId());
+        report = appendValue(report, "Node Id", locate.node() == null ? null : locate.node().getId());
 
         Plot plot = locate.plot();
         if (plot == null) {
@@ -58,7 +58,7 @@ public final class DebugReportUtil {
         report = appendSection(report, "Badges");
         for (int i = 0; i < profile.badges().size(); i++) {
             PlayerBadge badge = profile.badges().get(i);
-            report = appendValue(report, "Badge " + (i + 1), "text " + readable(badge.text()) + ", name " + readable(badge.name()) + ", description " + readable(badge.description()));
+            report = appendValue(report, "Badge " + (i + 1), "text " + readable(badge.text().getString()) + ", name " + readable(badge.name().getString()) + ", description " + readableText(badge.description()));
         }
         return report;
     }
@@ -93,6 +93,10 @@ public final class DebugReportUtil {
 
     private static String readable(String value) {
         return readable((Object) value);
+    }
+
+    private static String readableText(net.minecraft.text.Text value) {
+        return value == null ? readable((Object) null) : readable(value.getString());
     }
 
 }

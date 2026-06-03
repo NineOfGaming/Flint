@@ -156,7 +156,7 @@ public class WhoisFeature implements PacketListeningFeature {
         String joined = normalizeBlank(readLineValue(normalizedText, "Joined"));
         String about = normalizeBlank(readLineValue(normalizedText, "About"));
 
-        return new PlayerProfile(userName, null, ranks, badges, pronouns, joined, about);
+        return new PlayerProfile(userName, ranks, badges, pronouns, joined, about);
     }
 
     private static PlayerRanks parseRanks(Text content, String rawRanks) {
@@ -279,7 +279,7 @@ public class WhoisFeature implements PacketListeningFeature {
 
         for (String badgeText : rawBadges.trim().split("\\s+")) {
             if (!badgeText.isBlank()) {
-                badges.add(new PlayerBadge(badgeText, badgeText, null));
+                badges.add(new PlayerBadge(Text.literal(badgeText), Text.literal(badgeText), null));
             }
         }
         return badges;
@@ -296,8 +296,9 @@ public class WhoisFeature implements PacketListeningFeature {
                 String name = normalizeBlank(hoverLines[0]);
                 String description = hoverLines.length > 1 ? normalizeBlank(hoverLines[1]) : null;
 
-                if (name != null && badges.stream().noneMatch(badge -> badge.text().equals(visibleText) && badge.name().equals(name))) {
-                    badges.add(new PlayerBadge(visibleText, name, description));
+                if (name != null && badges.stream().noneMatch(badge -> badge.text().getString().equals(visibleText) && badge.name().getString().equals(name))) {
+                    Text badgeDescription = description == null ? null : Text.literal(description);
+                    badges.add(new PlayerBadge(text.copy(), Text.literal(name), badgeDescription));
                 }
             }
         }
@@ -324,6 +325,7 @@ public class WhoisFeature implements PacketListeningFeature {
     }
 
     private static String normalizeText(String text) {
+        // Strip NBSP, zero-width formatting characters, and BOM characters from styled chat text.
         return text.replace('\r', '\n')
                 .replaceAll("[\\x{00A0}\\x{200B}\\x{200C}\\x{200D}\\x{FEFF}]", "")
                 .trim();

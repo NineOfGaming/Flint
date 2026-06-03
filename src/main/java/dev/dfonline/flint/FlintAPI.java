@@ -136,6 +136,17 @@ public final class FlintAPI {
         return completeOnClientThread(WhoisFeature.requestWhois(resolvedPlayerName));
     }
 
+    /**
+     * Clears Flint's cached /whois profile results.
+     *
+     * <p>
+     * The next profile request for any player will run /whois instead of using a cached profile.
+     * </p>
+     */
+    public static void clearPlayerProfileCache() {
+        WhoisFeature.clearCache();
+    }
+
     private static String resolvePlayerName(String playerName) {
         if (playerName != null && !playerName.isBlank()) {
             return playerName.trim();
