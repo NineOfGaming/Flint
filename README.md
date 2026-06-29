@@ -86,11 +86,16 @@ public void error() {
 ### Mode Tracking
 
 Flint tracks the user's current mode and optionally the plot and node they are on, you can access this info using
-**Flint.getUser().getMode()**, **Flint.getUser().getPlot()**, and **Flint.getUser().getNode()**.
+**Flint.getUser().getMode()**, **Flint.getUser().getPlot()**, and **Flint.getUser().getNode()**.  
+Use **Flint.getUser().isLocationConfirmed()** to check whether the current location state has been
+confirmed by `/locate`, or is only Flint's best currently inferred state.
 
 ```java
 public boolean shouldShowPlotOverlay() {
-    return Flint.getUser().getMode() == Mode.PLAY && Flint.getUser().getPlot().handle() == "myplot";
+    Plot plot = Flint.getUser().getPlot();
+    return Flint.getUser().isInPlay()
+            && plot != null
+            && plot.getHandle().equals("myplot");
 }
 ```
 
@@ -118,7 +123,10 @@ TODO
 
 An enum containing every mode the user can be in,
 you can check whether a mode means the user is in a plot
-or if they are in a mode that allows them to modify a plot with `Mode.isInPlot()` and `Mode.isEditor()` respectively.
+or if they are in a mode that allows them to modify a plot with `Mode.isInPlot()` and `Mode.isEditor()` respectively.  
+Specific mode checks are available with helpers such as `Mode.isInPlay()`, `Mode.isInDev()`, and `Mode.isAtSpawn()`.  
+The same helpers are available on `User`, plus confirmed variants such as `User.isConfirmedInPlay()` and
+`User.isConfirmedInPlot()` that return false unless the current location state came from `/locate`.
 
 #### Plot
 

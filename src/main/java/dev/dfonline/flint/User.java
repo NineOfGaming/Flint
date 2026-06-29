@@ -21,6 +21,7 @@ public final class User {
     private @Nullable Plot plot;
     private @Nullable Node node;
     private int nodeId;
+    private boolean locationConfirmed = false;
 
     public ClientPlayerEntity getPlayer() {
         ClientPlayerEntity player = Flint.getClient().player;
@@ -33,6 +34,69 @@ public final class User {
 
     public @NotNull Mode getMode() {
         return this.mode;
+    }
+
+    /**
+     * @return Whether the current location state has been confirmed by /locate.
+     */
+    public boolean isLocationConfirmed() {
+        return this.locationConfirmed;
+    }
+
+    public boolean isAtSpawn() {
+        return this.mode.isAtSpawn();
+    }
+
+    public boolean isConfirmedAtSpawn() {
+        return this.locationConfirmed && this.isAtSpawn();
+    }
+
+    public boolean isInPlay() {
+        return this.mode.isInPlay();
+    }
+
+    public boolean isConfirmedInPlay() {
+        return this.locationConfirmed && this.isInPlay();
+    }
+
+    public boolean isInDev() {
+        return this.mode.isInDev();
+    }
+
+    public boolean isConfirmedInDev() {
+        return this.locationConfirmed && this.isInDev();
+    }
+
+    public boolean isInBuild() {
+        return this.mode.isInBuild();
+    }
+
+    public boolean isConfirmedInBuild() {
+        return this.locationConfirmed && this.isInBuild();
+    }
+
+    public boolean isCodeSpectating() {
+        return this.mode.isCodeSpectating();
+    }
+
+    public boolean isConfirmedCodeSpectating() {
+        return this.locationConfirmed && this.isCodeSpectating();
+    }
+
+    public boolean isInPlot() {
+        return this.mode.isInPlot();
+    }
+
+    public boolean isConfirmedInPlot() {
+        return this.locationConfirmed && this.isInPlot();
+    }
+
+    public boolean isEditor() {
+        return this.mode.isEditor();
+    }
+
+    public boolean isConfirmedEditor() {
+        return this.locationConfirmed && this.isEditor();
     }
 
     @ApiStatus.Internal
@@ -70,6 +134,11 @@ public final class User {
 
     public void setNodeId(int nodeId) {
         this.nodeId = nodeId;
+    }
+
+    @ApiStatus.Internal
+    public void setLocationConfirmed(boolean locationConfirmed) {
+        this.locationConfirmed = locationConfirmed;
     }
 
     public void sendMessage(Message message) {

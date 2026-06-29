@@ -41,6 +41,30 @@ public enum Mode {
         return this.name;
     }
 
+    public boolean isAtSpawn() {
+        return this == SPAWN;
+    }
+
+    public boolean isInPlay() {
+        return this == PLAY;
+    }
+
+    public boolean isInDev() {
+        return this == DEV;
+    }
+
+    public boolean isInBuild() {
+        return this == BUILD;
+    }
+
+    public boolean isCodeSpectating() {
+        return this == CODE_SPECTATE;
+    }
+
+    public boolean isNone() {
+        return this == NONE;
+    }
+
     public boolean isInPlot() {
         return this.inPlot;
     }

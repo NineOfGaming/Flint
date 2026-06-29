@@ -54,6 +54,8 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
             LOGGER.info("Setting to mode " + mode);
         }
 
+        Flint.getUser().setLocationConfirmed(false);
+
         if (FlintAPI.shouldConfirmLocationWithLocate() && mode != Mode.NONE) {
             hasQueuedLocate = true;
         } else {
@@ -109,6 +111,7 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
                 LocateFeature.requestLocate(name).thenAccept(locate -> {
                     Flint.getUser().setNode(locate.node());
                     Flint.getUser().setNodeId(locate.nodeId());
+                    Flint.getUser().setLocationConfirmed(true);
 
                     Vec3i newOrigin;
                     if (locate.mode() == Mode.DEV) {

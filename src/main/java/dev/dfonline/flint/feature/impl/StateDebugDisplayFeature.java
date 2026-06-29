@@ -31,13 +31,16 @@ public class StateDebugDisplayFeature implements RenderedFeature {
 
         ArrayList<Text> texts = new ArrayList<>();
         texts.add(literal("General State:").withColor(PaletteColor.PURPLE.value()));
+        texts.add(formatValue("Mode", ObjectUtil.toString(user.getMode(), Mode::getName)));
+        texts.add(formatValue("Location Confirmed", user.isLocationConfirmed() + ""));
+        texts.add(formatValue("In Plot", user.isInPlot() + ""));
+        texts.add(formatValue("Is Editor", user.isEditor() + ""));
         texts.add(formatValue("Node", ObjectUtil.toString(user.getNode(), Node::getName)));
         texts.add(formatValue("Node Id", user.getNodeId() + ""));
         texts.add(formatValue("Plot", ObjectUtil.toString(user.getPlot(), plot -> plot.getId() + "")));
         texts.add(formatValue("Plot Size", ObjectUtil.toString(user.getPlot(), plot -> plot.getSize().name())));
         texts.add(formatValue("Plot Size Is Known", ObjectUtil.toString(user.getPlot(), plot -> plot.isSizeKnown() + "")));
         texts.add(formatValue("Plot Has Underground", ObjectUtil.toString(user.getPlot(), plot -> plot.hasUnderground() + "")));
-        texts.add(formatValue("Mode", ObjectUtil.toString(user.getMode(), Mode::getName)));
         texts.add(formatValue("Dev Origin Location",
                 ObjectUtil.toString(user.getPlot(), plot -> ObjectUtil.toString(plot.getDevOrigin(), Object::toString))
         ));
