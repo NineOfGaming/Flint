@@ -1,6 +1,7 @@
 package dev.dfonline.flint;
 
 import dev.dfonline.flint.feature.core.FeatureTrait;
+import dev.dfonline.flint.feature.impl.CommandSenderFeature;
 
 @SuppressWarnings("unused") // API, we don't use all methods
 public final class FlintAPI {
@@ -69,4 +70,21 @@ public final class FlintAPI {
         Flint.FEATURE_MANAGER.registerAll(features);
     }
 
+    /**
+     * Queues a command to be sent without triggering chat spam limits.
+     *
+     * @param command The command to send, with or without a leading slash.
+     */
+    public static void queueCommand(String command) {
+        CommandSenderFeature.queueCommand(command);
+    }
+
+    /**
+     * Queues a plot command to be sent without triggering chat spam limits.
+     *
+     * @param command The plot command to send, with or without a leading at sign.
+     */
+    public static void queuePlotCommand(String command) {
+        CommandSenderFeature.queuePlotCommand(command);
+    }
 }
