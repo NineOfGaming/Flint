@@ -10,6 +10,7 @@ import dev.dfonline.flint.feature.impl.GetActionDumpFeature;
 import dev.dfonline.flint.feature.impl.LocateFeature;
 import dev.dfonline.flint.feature.impl.ModeTrackerFeature;
 import dev.dfonline.flint.feature.impl.PacketLoggerFeature;
+import dev.dfonline.flint.feature.impl.ServerPatchFeature;
 import dev.dfonline.flint.feature.impl.StateDebugDisplayFeature;
 import dev.dfonline.flint.feature.trait.CommandFeature;
 import dev.dfonline.flint.feature.trait.ConnectionListeningFeature;
@@ -74,6 +75,7 @@ public class Flint implements ClientModInitializer {
 
                 // Functionality
                 new ModeTrackerFeature(),
+                new ServerPatchFeature(),
                 new GetActionDumpFeature(),
                 new FlintCommandFeature()
         );

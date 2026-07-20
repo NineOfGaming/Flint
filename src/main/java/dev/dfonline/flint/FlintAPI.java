@@ -1,6 +1,10 @@
 package dev.dfonline.flint;
 
 import dev.dfonline.flint.feature.core.FeatureTrait;
+import dev.dfonline.flint.hypercube.ServerPatch;
+import dev.dfonline.flint.hypercube.ServerPatchSet;
+import dev.dfonline.flint.hypercube.ServerPatches;
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("unused") // API, we don't use all methods
 public final class FlintAPI {
@@ -49,6 +53,20 @@ public final class FlintAPI {
      */
     public static boolean isDebugging() {
         return debugging;
+    }
+
+    /**
+     * @return The known server patches, split by server target.
+     */
+    public static ServerPatchSet getServerPatches() {
+        return ServerPatches.current();
+    }
+
+    /**
+     * @return The known patch for the node the client is currently on, or {@code null} if it is not known yet.
+     */
+    public static @Nullable ServerPatch getServerPatch() {
+        return getServerPatches().patchForNode(Flint.getUser().getNode());
     }
 
     /**

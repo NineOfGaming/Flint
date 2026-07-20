@@ -8,6 +8,7 @@ import dev.dfonline.flint.feature.trait.RenderedFeature;
 import dev.dfonline.flint.hypercube.Mode;
 import dev.dfonline.flint.hypercube.Node;
 import dev.dfonline.flint.hypercube.Plot;
+import dev.dfonline.flint.hypercube.ServerPatches;
 import dev.dfonline.flint.util.Logger;
 import dev.dfonline.flint.util.ObjectUtil;
 import dev.dfonline.flint.util.PaletteColor;
@@ -33,6 +34,7 @@ public class StateDebugDisplayFeature implements RenderedFeature {
         texts.add(literal("General State:").withColor(PaletteColor.PURPLE.value()));
         texts.add(formatValue("Node", ObjectUtil.toString(user.getNode(), Node::getName)));
         texts.add(formatValue("Node Id", user.getNodeId() + ""));
+        texts.add(formatValue("Patch", ObjectUtil.toString(ServerPatches.current().getForNode(user.getNode()), Object::toString)));
         texts.add(formatValue("Plot", ObjectUtil.toString(user.getPlot(), plot -> plot.getId() + "")));
         texts.add(formatValue("Plot Size", ObjectUtil.toString(user.getPlot(), plot -> plot.getSize().name())));
         texts.add(formatValue("Plot Size Is Known", ObjectUtil.toString(user.getPlot(), plot -> plot.isSizeKnown() + "")));
@@ -72,4 +74,3 @@ public class StateDebugDisplayFeature implements RenderedFeature {
     }
 
 }
-
