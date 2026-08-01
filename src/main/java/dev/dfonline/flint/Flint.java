@@ -1,6 +1,5 @@
 package dev.dfonline.flint;
 
-import dev.dfonline.flint.actiondump.ActionDump;
 import dev.dfonline.flint.feature.core.FeatureManager;
 import dev.dfonline.flint.feature.core.FeatureTrait;
 import dev.dfonline.flint.feature.core.FeatureTraitType;
@@ -10,7 +9,9 @@ import dev.dfonline.flint.feature.impl.GetActionDumpFeature;
 import dev.dfonline.flint.feature.impl.LocateFeature;
 import dev.dfonline.flint.feature.impl.ModeTrackerFeature;
 import dev.dfonline.flint.feature.impl.PacketLoggerFeature;
+import dev.dfonline.flint.feature.impl.ServerPatchFeature;
 import dev.dfonline.flint.feature.impl.StateDebugDisplayFeature;
+import dev.dfonline.flint.feature.impl.WhoisFeature;
 import dev.dfonline.flint.feature.trait.CommandFeature;
 import dev.dfonline.flint.feature.trait.ConnectionListeningFeature;
 import dev.dfonline.flint.feature.trait.RenderedFeature;
@@ -33,10 +34,9 @@ import net.kyori.adventure.platform.modcommon.MinecraftAudiences;
 import net.kyori.adventure.platform.modcommon.MinecraftClientAudiences;
 import net.minecraft.client.MinecraftClient;
 
-import java.util.Arrays;
-
 public class Flint implements ClientModInitializer {
 
+    @SuppressWarnings("unused")
     public static final String MOD_ID = "flint";
     public static final String MOD_NAME = "Flint";
     public static final FeatureManager FEATURE_MANAGER = new FeatureManager();
@@ -58,8 +58,10 @@ public class Flint implements ClientModInitializer {
     public void onInitializeClient() {
         LOGGER.info("Sparking it up");
 
-//         FlintAPI.setDebugging(true);
-//         FlintAPI.confirmLocationWithLocate();
+        // FlintAPI.setDebugging(true);
+        // FlintAPI.confirmLocationWithLocate();
+        // FlintAPI.fetchUserProfileWithWhois();
+        // FlintAPI.fetchPlotOwnerProfileWithWhois();
 
         FlintUpdate.fetchLatestRelease();
 
@@ -71,9 +73,11 @@ public class Flint implements ClientModInitializer {
                 // Systems
                 new CommandSenderFeature(),
                 new LocateFeature(),
+                new WhoisFeature(),
 
                 // Functionality
                 new ModeTrackerFeature(),
+                new ServerPatchFeature(),
                 new GetActionDumpFeature(),
                 new FlintCommandFeature()
         );
@@ -123,25 +127,25 @@ public class Flint implements ClientModInitializer {
                         ((WorldRenderFeature) feature).worldRenderStartMain(context)
                 )
         );
-        
+
         WorldRenderEvents.BEFORE_ENTITIES.register(context ->
                 FEATURE_MANAGER.getByTrait(FeatureTraitType.WORLD_RENDER).forEach(feature ->
                         ((WorldRenderFeature) feature).worldRenderBeforeEntities(context)
                 )
         );
-        
+
         WorldRenderEvents.AFTER_ENTITIES.register(context ->
                 FEATURE_MANAGER.getByTrait(FeatureTraitType.WORLD_RENDER).forEach(feature ->
                         ((WorldRenderFeature) feature).worldRenderAfterEntities(context)
                 )
         );
-        
+
         WorldRenderEvents.BEFORE_DEBUG_RENDER.register(context ->
                 FEATURE_MANAGER.getByTrait(FeatureTraitType.WORLD_RENDER).forEach(feature ->
                         ((WorldRenderFeature) feature).worldRenderBeforeDebugRender(context)
                 )
-        );   
-        
+        );
+
         WorldRenderEvents.BEFORE_TRANSLUCENT.register(context ->
                 FEATURE_MANAGER.getByTrait(FeatureTraitType.WORLD_RENDER).forEach(feature ->
                         ((WorldRenderFeature) feature).worldRenderBeforeTranslucent(context)
@@ -164,7 +168,7 @@ public class Flint implements ClientModInitializer {
                         ((WorldRenderFeature) feature).worldRenderEndMain(context)
                 )
         );
-        
+
         ClientLifecycleEvents.CLIENT_STOPPING.register(client ->
                 FEATURE_MANAGER.getByTrait(FeatureTraitType.SHUTDOWN).forEach(feature ->
                         ((ShutdownFeature) feature).onShutdown()

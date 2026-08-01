@@ -6,6 +6,8 @@ import dev.dfonline.flint.feature.trait.ConnectionListeningFeature;
 import dev.dfonline.flint.feature.trait.PacketListeningFeature;
 import dev.dfonline.flint.feature.trait.TickedFeature;
 import dev.dfonline.flint.hypercube.Mode;
+import dev.dfonline.flint.hypercube.PlayerLocation;
+import dev.dfonline.flint.hypercube.PlayerProfile;
 import dev.dfonline.flint.hypercube.Plot;
 import dev.dfonline.flint.hypercube.PlotSize;
 import dev.dfonline.flint.util.FlintUpdate;
@@ -13,6 +15,7 @@ import dev.dfonline.flint.util.Logger;
 import dev.dfonline.flint.util.result.EventResult;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.ClearTitleS2CPacket;
@@ -36,13 +39,16 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
     private static final String DEV_MODE_MESSAGE = "» You are now in dev mode.";
     private static final String BUILD_MODE_MESSAGE = "» You are now in build mode.";
     private static final String JOINED_GAME_PREFIX = "» Joined game: ";
-    private static final int DEV_SPAWN_OFFSET = 10;
+    private static final int DEV_SPAWN_OFFSET_X = 11;
+    private static final int DEV_SPAWN_OFFSET_Z = 10;
     private static final int GROUND_LEVEL = 49;
 
     private PendingModeSwitchAction pendingAction = PendingModeSwitchAction.CLEAR_TITLE;
     private static boolean hasQueuedLocate = false;
     private static Mode queuedMode = null;
     private static boolean sentUpdateMessageThisSession = false;
+    private static String requestedUserProfileName = null;
+    private static boolean pendingUserProfileRequest = false;
 
     @Override
     public boolean alwaysOn() {
@@ -54,13 +60,74 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
             LOGGER.info("Setting to mode " + mode);
         }
 
+        Flint.getUser().setLocationConfirmed(false);
+
+        if (mode == Mode.NONE) {
+            Flint.getUser().setProfile(null);
+        }
+
         if (FlintAPI.shouldConfirmLocationWithLocate() && mode != Mode.NONE) {
             hasQueuedLocate = true;
-        } else {
-            Flint.getUser().setNode(null);
-            Flint.getUser().setPlot(null);
-            Flint.getUser().setMode(mode);
+            return;
         }
+
+        Flint.getUser().setNode(null);
+        Flint.getUser().setPlot(null);
+        Flint.getUser().setMode(mode);
+    }
+
+    public static void confirmCurrentLocation() {
+        Flint.getUser().setLocationConfirmed(false);
+
+        ClientPlayerEntity player = Flint.getClient().player;
+        if (player == null) {
+            return;
+        }
+
+        LocateFeature.requestLocate(player.getGameProfile().name()).thenAccept(locate ->
+                Flint.getClient().execute(() -> applyLocateResult(locate))
+        );
+    }
+
+    static void ensureCurrentUserProfile() {
+        if (!FlintAPI.shouldFetchUserProfileWithWhois()) {
+            pendingUserProfileRequest = false;
+            return;
+        }
+
+        ClientPlayerEntity player = Flint.getClient().player;
+        if (player == null) {
+            pendingUserProfileRequest = true;
+            return;
+        }
+
+        String userName = player.getGameProfile().name();
+        PlayerProfile currentProfile = Flint.getUser().getProfile();
+        if (currentProfile != null && currentProfile.userName().equalsIgnoreCase(userName)) {
+            requestedUserProfileName = userName;
+            pendingUserProfileRequest = false;
+            return;
+        }
+
+        Flint.getUser().setProfile(null);
+        if (requestedUserProfileName != null && requestedUserProfileName.equalsIgnoreCase(userName)) {
+            pendingUserProfileRequest = false;
+            return;
+        }
+
+        requestedUserProfileName = userName;
+        pendingUserProfileRequest = false;
+        requestUserProfile(userName);
+    }
+
+    static void requestCurrentPlotOwnerProfile() {
+        Plot plot = Flint.getUser().getPlot();
+        if (plot == null) {
+            confirmCurrentLocation();
+            return;
+        }
+
+        requestPlotOwnerProfile(plot);
     }
 
     @Override
@@ -103,35 +170,13 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
     @Override
     public void tick() {
         if (Flint.getClient().player != null) {
+            if (pendingUserProfileRequest) {
+                ensureCurrentUserProfile();
+            }
+
             if (hasQueuedLocate) {
                 hasQueuedLocate = false;
-                String name = Flint.getUser().getPlayer().getNameForScoreboard();
-                LocateFeature.requestLocate(name).thenAccept(locate -> {
-                    Flint.getUser().setNode(locate.node());
-                    Flint.getUser().setNodeId(locate.nodeId());
-
-                    Vec3i newOrigin;
-                    if (locate.mode() == Mode.DEV) {
-                        BlockPos blockpos = Flint.getUser().getPlayer().getBlockPos();
-                        newOrigin = new Vec3i(blockpos.getX() + DEV_SPAWN_OFFSET, GROUND_LEVEL, blockpos.getZ() - DEV_SPAWN_OFFSET);
-                    } else {
-                        newOrigin = null;
-                    }
-
-                    Plot currentPlot = Flint.getUser().getPlot();
-
-                    if (locate.plot() != null) {
-                        if (currentPlot == null || !currentPlot.equals(locate.plot())) {
-                            Flint.getUser().setPlot(locate.plot());
-                        }
-                        if (Flint.getUser().getPlot().getDevOrigin() == null && newOrigin != null) {
-                            Flint.getUser().getPlot().setDevOrigin(newOrigin);
-                        }
-                    } else {
-                        Flint.getUser().setPlot(null);
-                    }
-                    Flint.getUser().setMode(locate.mode());
-                });
+                confirmCurrentLocation();
             }
 
             if (queuedMode != null) {
@@ -157,9 +202,109 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
     }
 
     @Override
+    public void onJoin() {
+        requestedUserProfileName = null;
+        pendingUserProfileRequest = FlintAPI.shouldFetchUserProfileWithWhois();
+        ensureCurrentUserProfile();
+    }
+
+    @Override
     public void onDisconnect() {
+        WhoisFeature.clearCache();
+        requestedUserProfileName = null;
+        pendingUserProfileRequest = false;
         setMode(Mode.NONE);
         sentUpdateMessageThisSession = false;
+    }
+
+    private static void applyLocateResult(PlayerLocation locate) {
+        if (Flint.getClient().player == null) {
+            return;
+        }
+
+        Flint.getUser().setLocationConfirmed(true);
+        Flint.getUser().setNode(locate.node());
+
+        Vec3i newOrigin;
+        if (locate.mode() == Mode.DEV) {
+            BlockPos blockpos = Flint.getUser().getPlayer().getBlockPos();
+            newOrigin = new Vec3i(blockpos.getX() + DEV_SPAWN_OFFSET_X, GROUND_LEVEL, blockpos.getZ() - DEV_SPAWN_OFFSET_Z);
+        } else {
+            newOrigin = null;
+        }
+
+        Plot currentPlot = Flint.getUser().getPlot();
+
+        if (locate.plot() != null) {
+            if (currentPlot == null || !currentPlot.equals(locate.plot())) {
+                Flint.getUser().setPlot(locate.plot());
+            }
+            if (Flint.getUser().getPlot().getDevOrigin() == null && newOrigin != null) {
+                Flint.getUser().getPlot().setDevOrigin(newOrigin);
+            }
+        } else {
+            Flint.getUser().setPlot(null);
+        }
+
+        requestEnabledPlotOwnerProfile(locate);
+        Flint.getUser().setMode(locate.mode());
+    }
+
+    private static void requestEnabledPlotOwnerProfile(PlayerLocation locate) {
+        if (!FlintAPI.shouldFetchPlotOwnerProfileWithWhois()) {
+            return;
+        }
+
+        Plot plot = locate.plot();
+        if (plot == null) {
+            return;
+        }
+
+        if (plot.getOwner().equalsIgnoreCase(locate.player())) {
+            WhoisFeature.requestWhois(locate.player())
+                    .thenAccept(profile -> Flint.getClient().execute(() -> setCurrentPlotOwnerProfile(profile)));
+            return;
+        }
+
+        requestPlotOwnerProfile(plot);
+    }
+
+    private static void requestUserProfile(String userName) {
+        WhoisFeature.requestWhois(userName)
+                .whenComplete((profile, throwable) -> Flint.getClient().execute(() -> {
+                    if (throwable != null) {
+                        clearRequestedUserProfile(userName);
+                        return;
+                    }
+
+                    setCurrentUserProfile(profile);
+                }));
+    }
+
+    private static void requestPlotOwnerProfile(Plot plot) {
+        WhoisFeature.requestWhois(plot.getOwner())
+                .thenAccept(profile -> Flint.getClient().execute(() -> setCurrentPlotOwnerProfile(profile)));
+    }
+
+    private static void setCurrentUserProfile(PlayerProfile profile) {
+        ClientPlayerEntity player = Flint.getClient().player;
+        if (player != null && player.getGameProfile().name().equalsIgnoreCase(profile.userName())) {
+            requestedUserProfileName = profile.userName();
+            Flint.getUser().setProfile(profile);
+        }
+    }
+
+    private static void clearRequestedUserProfile(String userName) {
+        if (requestedUserProfileName != null && requestedUserProfileName.equalsIgnoreCase(userName)) {
+            requestedUserProfileName = null;
+        }
+    }
+
+    private static void setCurrentPlotOwnerProfile(PlayerProfile profile) {
+        Plot currentPlot = Flint.getUser().getPlot();
+        if (currentPlot != null && currentPlot.getOwner().equalsIgnoreCase(profile.userName())) {
+            currentPlot.setOwnerProfile(profile);
+        }
     }
 
     private enum PendingModeSwitchAction {
@@ -213,9 +358,9 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
 
         PlotSize size = plot.getSize();
         BlockState groundCheck = Flint.getClient().world.getBlockState(new BlockPos(
-                Math.max(Math.min((int) Flint.getUser().getPlayer().getX(), plot.getDevOrigin().getX() - 1), plot.getDevOrigin().getX() - (size.getCodeWidth())),
-                49,
-                Math.max(Math.min((int) Flint.getUser().getPlayer().getZ(), plot.getDevOrigin().getZ() + size.getCodeLength()), plot.getDevOrigin().getZ())
+                Math.clamp((int) Flint.getUser().getPlayer().getX(), plot.getDevOrigin().getX() - (size.getCodeWidth()), plot.getDevOrigin().getX() - 1),
+                8,
+                Math.clamp((int) Flint.getUser().getPlayer().getZ(), plot.getDevOrigin().getZ(), plot.getDevOrigin().getZ() + size.getCodeLength())
         ));
 
         if (!groundCheck.isOf(Blocks.VOID_AIR)) {

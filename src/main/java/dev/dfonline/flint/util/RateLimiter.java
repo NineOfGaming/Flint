@@ -45,4 +45,16 @@ public final class RateLimiter {
         return this.count >= this.threshold;
     }
 
+    public int getCount() {
+        return this.count;
+    }
+
+    public int getIncrementStep() {
+        return this.incrementStep;
+    }
+
+    public int getThreshold() {
+        return this.threshold;
+    }
+
 }

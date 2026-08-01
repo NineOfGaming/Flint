@@ -10,12 +10,14 @@ import dev.dfonline.flint.actiondump.particle.ParticleType;
 import dev.dfonline.flint.actiondump.potion.PotionType;
 import dev.dfonline.flint.actiondump.shop.CosmeticType;
 import dev.dfonline.flint.actiondump.sound.SoundType;
+import dev.dfonline.flint.hypercube.ServerPatchSet;
 import net.kyori.adventure.text.Component;
 
 import java.io.IOException;
 import java.nio.file.Files;
 
 public record ActionDump(
+        ServerPatchSet serverPatches,
         CodeBlockType[] codeblocks,
         ActionType[] actions,
         ValueCategory[] gameValueCategories,
@@ -27,6 +29,13 @@ public record ActionDump(
         PotionType[] potions,
         CosmeticType[] cosmetics
 ) {
+
+    public ActionDump {
+        if (serverPatches == null) {
+            serverPatches = ServerPatchSet.UNKNOWN;
+        }
+    }
+
     private static class Instance {
         private static ActionDump ACTION_DUMP;
     }

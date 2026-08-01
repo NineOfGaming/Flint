@@ -5,9 +5,12 @@ import dev.dfonline.flint.feature.trait.ModeSwitchListeningFeature;
 import dev.dfonline.flint.feature.trait.PlotSwitchListeningFeature;
 import dev.dfonline.flint.hypercube.Mode;
 import dev.dfonline.flint.hypercube.Node;
+import dev.dfonline.flint.hypercube.PlayerProfile;
+import dev.dfonline.flint.hypercube.PlayerRanks;
 import dev.dfonline.flint.hypercube.Plot;
 import dev.dfonline.flint.util.message.Message;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,7 +23,8 @@ public final class User {
     private @NotNull Mode mode = Mode.NONE;
     private @Nullable Plot plot;
     private @Nullable Node node;
-    private int nodeId;
+    private @Nullable PlayerProfile profile;
+    private boolean locationConfirmed = false;
 
     public ClientPlayerEntity getPlayer() {
         ClientPlayerEntity player = Flint.getClient().player;
@@ -35,6 +39,69 @@ public final class User {
         return this.mode;
     }
 
+    /**
+     * @return Whether the current location state has been confirmed by /locate.
+     */
+    public boolean isLocationConfirmed() {
+        return this.locationConfirmed;
+    }
+
+    public boolean isAtSpawn() {
+        return this.mode.isAtSpawn();
+    }
+
+    public boolean isConfirmedAtSpawn() {
+        return this.locationConfirmed && this.isAtSpawn();
+    }
+
+    public boolean isInPlay() {
+        return this.mode.isInPlay();
+    }
+
+    public boolean isConfirmedInPlay() {
+        return this.locationConfirmed && this.isInPlay();
+    }
+
+    public boolean isInDev() {
+        return this.mode.isInDev();
+    }
+
+    public boolean isConfirmedInDev() {
+        return this.locationConfirmed && this.isInDev();
+    }
+
+    public boolean isInBuild() {
+        return this.mode.isInBuild();
+    }
+
+    public boolean isConfirmedInBuild() {
+        return this.locationConfirmed && this.isInBuild();
+    }
+
+    public boolean isCodeSpectating() {
+        return this.mode.isCodeSpectating();
+    }
+
+    public boolean isConfirmedCodeSpectating() {
+        return this.locationConfirmed && this.isCodeSpectating();
+    }
+
+    public boolean isInPlot() {
+        return this.mode.isInPlot();
+    }
+
+    public boolean isConfirmedInPlot() {
+        return this.locationConfirmed && this.isInPlot();
+    }
+
+    public boolean isEditor() {
+        return this.mode.isEditor();
+    }
+
+    public boolean isConfirmedEditor() {
+        return this.locationConfirmed && this.isEditor();
+    }
+
     @ApiStatus.Internal
     public void setMode(@NotNull Mode mode) {
         Flint.FEATURE_MANAGER.getByTrait(FeatureTraitType.MODE_SWITCH_LISTENING).forEach(feature ->
@@ -47,12 +114,43 @@ public final class User {
         return this.plot;
     }
 
+    /**
+     * Gets the client's current position in the current plot's coordinate space.
+     *
+     * @return The plot-relative position, or {@code null} if the player, plot, or development origin is unavailable.
+     */
+    public @Nullable Vec3d getPlotPosition() {
+        ClientPlayerEntity player = Flint.getClient().player;
+        if (player == null || this.plot == null) {
+            return null;
+        }
+
+        return this.plot.toRelativePosition(player.getEntityPos());
+    }
+
     @ApiStatus.Internal
     public void setPlot(@Nullable Plot plot) {
         Flint.FEATURE_MANAGER.getByTrait(FeatureTraitType.PLOT_SWITCH_LISTENING).forEach(feature ->
                 ((PlotSwitchListeningFeature) feature).onSwitchPlot(this.plot, plot)
         );
         this.plot = plot;
+    }
+
+    public @Nullable PlayerProfile getProfile() {
+        return this.profile;
+    }
+
+    public PlayerRanks getRanks() {
+        if (this.profile == null) {
+            return PlayerRanks.EMPTY;
+        }
+
+        return this.profile.ranks();
+    }
+
+    @ApiStatus.Internal
+    public void setProfile(@Nullable PlayerProfile profile) {
+        this.profile = profile;
     }
 
     public @Nullable Node getNode() {
@@ -64,12 +162,9 @@ public final class User {
         this.node = node;
     }
 
-    public int getNodeId() {
-        return this.nodeId;
-    }
-
-    public void setNodeId(int nodeId) {
-        this.nodeId = nodeId;
+    @ApiStatus.Internal
+    public void setLocationConfirmed(boolean locationConfirmed) {
+        this.locationConfirmed = locationConfirmed;
     }
 
     public void sendMessage(Message message) {

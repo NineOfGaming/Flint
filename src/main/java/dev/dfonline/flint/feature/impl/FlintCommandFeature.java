@@ -2,27 +2,33 @@ package dev.dfonline.flint.feature.impl;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import dev.dfonline.flint.Flint;
-import dev.dfonline.flint.actiondump.ActionDump;
+import dev.dfonline.flint.FlintAPI;
 import dev.dfonline.flint.feature.trait.CommandFeature;
 import dev.dfonline.flint.hypercube.Plot;
-import dev.dfonline.flint.util.ComponentUtil;
+import dev.dfonline.flint.util.DebugReportUtil;
 import dev.dfonline.flint.util.FlintSound;
+import dev.dfonline.flint.util.message.MessageUtil;
 import dev.dfonline.flint.util.message.impl.CompoundMessage;
 import dev.dfonline.flint.util.message.impl.SoundMessage;
+import dev.dfonline.flint.util.message.impl.prefix.DebugMessage;
 import dev.dfonline.flint.util.message.impl.prefix.ErrorMessage;
 import dev.dfonline.flint.util.message.impl.prefix.InfoMessage;
 import dev.dfonline.flint.util.message.impl.prefix.SuccessMessage;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.kyori.adventure.text.Component;
+import net.minecraft.command.CommandSource;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
 
 public class FlintCommandFeature implements CommandFeature {
+
+    private static final SuggestionProvider<FabricClientCommandSource> ONLINE_PLAYERS = (context, builder) ->
+            CommandSource.suggestMatching(context.getSource().getPlayerNames(), builder);
 
     @Override
     public String commandName() {
@@ -67,16 +73,109 @@ public class FlintCommandFeature implements CommandFeature {
                     }
                     return 1;
                 })
-        ).then(literal("locate_test")
+        ).then(literal("debug")
                 .executes(context -> {
-                    debugLocate(Flint.getUser().getPlayer().getNameForScoreboard());
+                    toggleDebugging();
                     return 1;
                 })
-                .then(argument("player", StringArgumentType.greedyString())
+                .then(literal("enable")
                         .executes(context -> {
-                            debugLocate(StringArgumentType.getString(context, "player"));
+                            setDebugging(true);
                             return 1;
                         })
+                )
+                .then(literal("disable")
+                        .executes(context -> {
+                            setDebugging(false);
+                            return 1;
+                        })
+                )
+                .then(literal("clear_profile_cache")
+                        .executes(context -> {
+                            clearPlayerProfileCache();
+                            return 1;
+                        })
+                )
+                .then(literal("confirm_location")
+                        .executes(context -> {
+                            sendConfirmLocationWithLocateStatus();
+                            return 1;
+                        })
+                        .then(literal("enable")
+                                .executes(context -> {
+                                    setUserConfirmLocationWithLocate(true);
+                                    return 1;
+                                })
+                        )
+                        .then(literal("disable")
+                                .executes(context -> {
+                                    setUserConfirmLocationWithLocate(false);
+                                    return 1;
+                                })
+                        )
+                )
+                .then(literal("user_profile")
+                        .executes(context -> {
+                            sendUserProfileWithWhoisStatus();
+                            return 1;
+                        })
+                        .then(literal("enable")
+                                .executes(context -> {
+                                    setUserFetchUserProfileWithWhois(true);
+                                    return 1;
+                                })
+                        )
+                        .then(literal("disable")
+                                .executes(context -> {
+                                    setUserFetchUserProfileWithWhois(false);
+                                    return 1;
+                                })
+                        )
+                )
+                .then(literal("plot_owner_profile")
+                        .executes(context -> {
+                            sendPlotOwnerProfileWithWhoisStatus();
+                            return 1;
+                        })
+                        .then(literal("enable")
+                                .executes(context -> {
+                                    setUserFetchPlotOwnerProfileWithWhois(true);
+                                    return 1;
+                                })
+                        )
+                        .then(literal("disable")
+                                .executes(context -> {
+                                    setUserFetchPlotOwnerProfileWithWhois(false);
+                                    return 1;
+                                })
+                        )
+                )
+        ).then(literal("test")
+                .then(literal("locate")
+                        .executes(context -> {
+                            debugLocate(Flint.getUser().getPlayer().getGameProfile().name());
+                            return 1;
+                        })
+                        .then(argument("player", StringArgumentType.word())
+                                .suggests(ONLINE_PLAYERS)
+                                .executes(context -> {
+                                    debugLocate(StringArgumentType.getString(context, "player"));
+                                    return 1;
+                                })
+                        )
+                )
+                .then(literal("whois")
+                        .executes(context -> {
+                            debugWhois(Flint.getUser().getPlayer().getGameProfile().name());
+                            return 1;
+                        })
+                        .then(argument("player", StringArgumentType.word())
+                                .suggests(ONLINE_PLAYERS)
+                                .executes(context -> {
+                                    debugWhois(StringArgumentType.getString(context, "player"));
+                                    return 1;
+                                })
+                        )
                 )
         ).then(literal("action_dump")
                 .executes(context -> {
@@ -92,19 +191,132 @@ public class FlintCommandFeature implements CommandFeature {
         );
     }
 
+    private static void toggleDebugging() {
+        setDebugging(!FlintAPI.isDebugging());
+    }
+
+    private static void setDebugging(boolean debugging) {
+        FlintAPI.setDebugging(debugging);
+        Flint.getUser().sendMessage(new SuccessMessage(debugging ? "flint.command.flint.debug.enabled" : "flint.command.flint.debug.disabled"));
+    }
+
+    private static void clearPlayerProfileCache() {
+        FlintAPI.clearPlayerProfileCache();
+        Flint.getUser().sendMessage(new SuccessMessage("flint.command.flint.debug.profile_cache.cleared"));
+    }
+
+    private static void sendConfirmLocationWithLocateStatus() {
+        boolean userEnabled = FlintAPI.isUserConfirmLocationWithLocate();
+        boolean modRequired = FlintAPI.isConfirmLocationWithLocateRequired();
+        boolean ownerProfileEnabled = FlintAPI.shouldFetchPlotOwnerProfileWithWhois();
+
+        if (modRequired) {
+            Flint.getUser().sendMessage(new InfoMessage("flint.command.flint.confirm_location.status.enabled.required"));
+            return;
+        }
+
+        if (userEnabled) {
+            Flint.getUser().sendMessage(new InfoMessage("flint.command.flint.confirm_location.status.enabled.user"));
+            return;
+        }
+
+        if (ownerProfileEnabled) {
+            Flint.getUser().sendMessage(new InfoMessage("flint.command.flint.confirm_location.status.enabled.plot_owner_profile"));
+            return;
+        }
+
+        Flint.getUser().sendMessage(new InfoMessage("flint.command.flint.confirm_location.status.disabled"));
+    }
+
+    private static void setUserConfirmLocationWithLocate(boolean userConfirmLocationWithLocate) {
+        FlintAPI.setUserConfirmLocationWithLocate(userConfirmLocationWithLocate);
+
+        if (userConfirmLocationWithLocate) {
+            ModeTrackerFeature.confirmCurrentLocation();
+            Flint.getUser().sendMessage(new SuccessMessage("flint.command.flint.confirm_location.enabled"));
+            return;
+        }
+
+        if (FlintAPI.shouldConfirmLocationWithLocate()) {
+            sendConfirmLocationWithLocateStatus();
+            return;
+        }
+
+        Flint.getUser().sendMessage(new SuccessMessage("flint.command.flint.confirm_location.disabled"));
+    }
+
+    private static void sendUserProfileWithWhoisStatus() {
+        if (FlintAPI.isFetchUserProfileWithWhoisRequired()) {
+            Flint.getUser().sendMessage(new InfoMessage("flint.command.flint.user_profile.status.enabled.required"));
+            return;
+        }
+
+        if (FlintAPI.isUserFetchUserProfileWithWhois()) {
+            Flint.getUser().sendMessage(new InfoMessage("flint.command.flint.user_profile.status.enabled.user"));
+            return;
+        }
+
+        Flint.getUser().sendMessage(new InfoMessage("flint.command.flint.user_profile.status.disabled"));
+    }
+
+    private static void setUserFetchUserProfileWithWhois(boolean userFetchUserProfileWithWhois) {
+        FlintAPI.setUserFetchUserProfileWithWhois(userFetchUserProfileWithWhois);
+
+        if (userFetchUserProfileWithWhois) {
+            ModeTrackerFeature.ensureCurrentUserProfile();
+            Flint.getUser().sendMessage(new SuccessMessage("flint.command.flint.user_profile.enabled"));
+            return;
+        }
+
+        if (FlintAPI.shouldFetchUserProfileWithWhois()) {
+            Flint.getUser().sendMessage(new InfoMessage("flint.command.flint.user_profile.required"));
+            return;
+        }
+
+        Flint.getUser().sendMessage(new SuccessMessage("flint.command.flint.user_profile.disabled"));
+    }
+
+    private static void sendPlotOwnerProfileWithWhoisStatus() {
+        if (FlintAPI.isFetchPlotOwnerProfileWithWhoisRequired()) {
+            Flint.getUser().sendMessage(new InfoMessage("flint.command.flint.plot_owner_profile.status.enabled.required"));
+            return;
+        }
+
+        if (FlintAPI.isUserFetchPlotOwnerProfileWithWhois()) {
+            Flint.getUser().sendMessage(new InfoMessage("flint.command.flint.plot_owner_profile.status.enabled.user"));
+            return;
+        }
+
+        Flint.getUser().sendMessage(new InfoMessage("flint.command.flint.plot_owner_profile.status.disabled"));
+    }
+
+    private static void setUserFetchPlotOwnerProfileWithWhois(boolean userFetchPlotOwnerProfileWithWhois) {
+        FlintAPI.setUserFetchPlotOwnerProfileWithWhois(userFetchPlotOwnerProfileWithWhois);
+
+        if (userFetchPlotOwnerProfileWithWhois) {
+            ModeTrackerFeature.requestCurrentPlotOwnerProfile();
+            Flint.getUser().sendMessage(new SuccessMessage("flint.command.flint.plot_owner_profile.enabled"));
+            return;
+        }
+
+        if (FlintAPI.shouldFetchPlotOwnerProfileWithWhois()) {
+            Flint.getUser().sendMessage(new InfoMessage("flint.command.flint.plot_owner_profile.required"));
+            return;
+        }
+
+        Flint.getUser().sendMessage(new SuccessMessage("flint.command.flint.plot_owner_profile.disabled"));
+    }
+
     private static void debugLocate(String player) {
-        LocateFeature.requestLocate(player).thenAccept(locate -> {
+        LocateFeature.requestLocate(player).thenAccept(locate -> MessageUtil.sendOnClientThread(new DebugMessage(DebugReportUtil.formatLocateResult(locate)))).exceptionally(throwable -> {
+            MessageUtil.sendOnClientThread(new ErrorMessage("flint.command.flint.test.locate.fail", Component.text(throwable.getMessage())));
+            return null;
+        });
+    }
 
-            Plot plot = locate.plot();
-            String plotString = "null";
-            if (plot != null) {
-                plotString = plot.toReadableString();
-            }
-
-            Flint.getUser().sendMessage(new SuccessMessage("flint.command.flint.locate_test.success", Component.text(locate.player()), Component.text(locate.mode().getName()), Component.text(plotString), Component.text(locate.node().getName())));
-
-        }).exceptionally(throwable -> {
-            Flint.getUser().sendMessage(new ErrorMessage("flint.command.flint.locate_test.fail", Component.text(throwable.getMessage())));
+    private static void debugWhois(String player) {
+        WhoisFeature.requestWhois(player).thenAccept(profile -> MessageUtil.sendOnClientThread(new DebugMessage(DebugReportUtil.formatProfileResult(profile)))).exceptionally(throwable -> {
+            MessageUtil.sendOnClientThread(new ErrorMessage("flint.command.flint.test.whois.fail", Component.text(throwable.getMessage())));
             return null;
         });
     }
