@@ -150,11 +150,9 @@ Use the Modrinth Maven repository to depend on Flint in your project.
 Flint updates on a **rolling release** schedule, once a push is made to the main branch, a new version is released.
 The latest release will be the most recent GitHub release, or other most recent release on Modrinth.
 
-Starting with the release containing this change, each published build uses its rolling release number as its Fabric
-mod version.  
+Starting with the release containing this change, each published build uses its rolling release number as its Fabric mod version.  
 For example, GitHub/Modrinth release `v123` has the Fabric version `123`.  
-This lets your mod require the
-oldest compatible Flint build in `fabric.mod.json`:
+This lets your mod require the oldest compatible Flint build in `fabric.mod.json`:
 
 ```json
 {
@@ -165,8 +163,7 @@ oldest compatible Flint build in `fabric.mod.json`:
 ```
 
 Fabric will then prevent the mod from loading with an older Flint build.  
-The `v` prefix is part of the release and
-Modrinth Maven version name, but is not part of the Fabric version.
+The `v` prefix is part of the release and Modrinth Maven version name, but is not part of the Fabric version.
 
 ### Build Script Example
 
