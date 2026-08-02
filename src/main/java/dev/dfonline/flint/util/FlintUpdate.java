@@ -11,10 +11,6 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import org.jspecify.annotations.Nullable;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -95,20 +91,10 @@ public final class FlintUpdate {
     }
 
     private static String getCurrentVersion() {
-        try (InputStream input = Flint.class.getClassLoader().getResourceAsStream("flint_version.txt")) {
-            if (input == null) {
-                return UNKNOWN_VERSION;
-            }
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
-                return reader.readLine();
-            }
-        } catch (IOException e) {
-            if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
-                return UNKNOWN_VERSION;
-            }
-            LOGGER.error("Failed to get mod version", e);
-            return UNKNOWN_VERSION;
-        }
+        return FabricLoader.getInstance()
+                .getModContainer(Flint.MOD_ID)
+                .map(container -> container.getMetadata().getVersion().getFriendlyString())
+                .orElse(UNKNOWN_VERSION);
     }
 
 
