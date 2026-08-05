@@ -19,7 +19,7 @@ public enum Node {
     DEV_3("dev3", "Dev 3", true),
     DEV_4("dev4", "Dev 4", true),
     LOCAL("local", "Local", true),
-    PRIVATE("private", "Private Node", false),
+    PRIVATE("private", "Private Node", true),
     ALPHA_1("alpha1", "Alpha 1", true),
     ALPHA_2("alpha2", "Alpha 2", true);
 
@@ -63,6 +63,13 @@ public enum Node {
 
     public boolean isActionDumpObtainable() {
         return this.isActionDumpObtainable;
+    }
+
+    public boolean isMain() {
+        return switch (this) {
+            case NODE_1, NODE_2, NODE_3, NODE_4, NODE_5, NODE_6, NODE_7 -> true;
+            default -> false;
+        };
     }
 
 }

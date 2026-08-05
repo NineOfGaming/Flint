@@ -1,26 +1,28 @@
 package dev.dfonline.flint.hypercube;
 
+import org.jetbrains.annotations.Nullable;
+
 public final class ServerPatches {
 
-    private static ServerPatchSet current = ServerPatchSet.UNKNOWN;
+    private static @Nullable ServerPatch current;
 
     private ServerPatches() {
     }
 
-    public static ServerPatchSet current() {
+    public static @Nullable ServerPatch current() {
         return current;
     }
 
-    public static void set(ServerPatchTarget target, String patch) {
-        current = current.with(target, patch);
+    public static @Nullable ServerPatch currentForNode(@Nullable Node node) {
+        return current == null ? null : current.forNode(node);
     }
 
-    public static void setUnknown(String patch) {
-        current = current.withUnknown(patch);
+    public static void set(String patch) {
+        current = ServerPatch.parse(patch);
     }
 
     public static void clear() {
-        current = ServerPatchSet.UNKNOWN;
+        current = null;
     }
 
 }

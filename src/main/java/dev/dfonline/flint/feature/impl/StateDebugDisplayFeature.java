@@ -10,6 +10,7 @@ import dev.dfonline.flint.hypercube.PlayerProfile;
 import dev.dfonline.flint.hypercube.PlayerRanks;
 import dev.dfonline.flint.hypercube.Plot;
 import dev.dfonline.flint.hypercube.PlotSize;
+import dev.dfonline.flint.hypercube.ServerPatch;
 import dev.dfonline.flint.hypercube.ServerPatches;
 import dev.dfonline.flint.util.ObjectUtil;
 import dev.dfonline.flint.util.PaletteColor;
@@ -46,7 +47,7 @@ public class StateDebugDisplayFeature implements RenderedFeature {
         texts.add(formatValue("Is Editor", user.isEditor() + ""));
         texts.add(formatValue("Node", ObjectUtil.toString(user.getNode(), Node::getName)));
         texts.add(formatValue("Node Id", ObjectUtil.toString(user.getNode(), Node::getId)));
-        texts.add(formatValue("Patch", ObjectUtil.toString(ServerPatches.current().getForNode(user.getNode()), Object::toString)));
+        texts.add(formatValue("Patch", ObjectUtil.toString(ServerPatches.currentForNode(user.getNode()), ServerPatch::value)));
         texts.add(formatValue("Command Queue", CommandSenderFeature.queueSize() + ""));
         texts.add(formatValue("Command Rate Limited", CommandSenderFeature.isRateLimited() + ""));
         texts.add(formatValue("Command Rate Limit", CommandSenderFeature.rateLimitCount() + "/" + CommandSenderFeature.rateLimitThreshold()));

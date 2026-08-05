@@ -7,7 +7,6 @@ import dev.dfonline.flint.feature.impl.WhoisFeature;
 import dev.dfonline.flint.hypercube.PlayerLocation;
 import dev.dfonline.flint.hypercube.PlayerProfile;
 import dev.dfonline.flint.hypercube.ServerPatch;
-import dev.dfonline.flint.hypercube.ServerPatchSet;
 import dev.dfonline.flint.hypercube.ServerPatches;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -91,7 +90,8 @@ public final class FlintAPI {
      *
      * <p>
      * The returned future completes on the client thread with the parsed location response,
-     * or exceptionally if the request times out. A null or blank player name falls back to the current client user.
+     * or exceptionally if the request times out.</br>
+     * A null or blank player name falls back to the current client user.
      * </p>
      *
      * @param playerName The player to locate, or null/blank for the current client user.
@@ -111,7 +111,8 @@ public final class FlintAPI {
      *
      * <p>
      * The returned future completes on the client thread with the parsed profile response,
-     * or exceptionally if the request times out. Recent profile results may be served from Flint's whois cache.
+     * or exceptionally if the request times out.</br>
+     * Recent profile results may be served from Flint's whois cache.
      * </p>
      *
      * @return A future for the current user's profile.
@@ -125,7 +126,8 @@ public final class FlintAPI {
      *
      * <p>
      * The returned future completes on the client thread with the parsed profile response,
-     * or exceptionally if the request times out. Recent profile results may be served from Flint's whois cache.
+     * or exceptionally if the request times out.</br>
+     * Recent profile results may be served from Flint's whois cache.</br>
      * A null or blank player name falls back to the current client user.
      * </p>
      *
@@ -297,17 +299,14 @@ public final class FlintAPI {
     }
 
     /**
-     * @return The known server patches, split by server target.
-     */
-    public static ServerPatchSet getServerPatches() {
-        return ServerPatches.current();
-    }
-
-    /**
+     * Special nodes include their node ID as a suffix.</br>
+     * For example, patch {@code 8.11} is returned as {@code 8.11} on a main or private node,
+     * and as {@code 8.11-beta} on Node Beta.
+     *
      * @return The known patch for the node the client is currently on, or {@code null} if it is not known yet.
      */
     public static @Nullable ServerPatch getServerPatch() {
-        return getServerPatches().patchForNode(Flint.getUser().getNode());
+        return ServerPatches.currentForNode(Flint.getUser().getNode());
     }
 
     /**

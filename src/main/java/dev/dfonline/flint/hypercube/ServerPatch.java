@@ -9,7 +9,7 @@ public record ServerPatch(String value) implements Comparable<ServerPatch> {
 
     public static final String REGEX = "\\d+\\.\\d+(?:\\.\\d+)?";
 
-    private static final Pattern PATCH_PATTERN = Pattern.compile("^" + REGEX + "$");
+    private static final Pattern PATCH_PATTERN = Pattern.compile("^" + REGEX + "(?:-[a-z0-9]+)?$");
 
     public ServerPatch {
         value = value.trim();
@@ -39,9 +39,22 @@ public record ServerPatch(String value) implements Comparable<ServerPatch> {
         return this.compareTo(parse(minimumPatch)) >= 0;
     }
 
+    public ServerPatch forNode(@Nullable Node node) {
+        String basePatch = this.baseValue();
+        String nodePatch = node == null || node.isMain() || node == Node.PRIVATE
+                ? basePatch
+                : basePatch + "-" + node.getId();
+
+        return nodePatch.equals(this.value) ? this : new ServerPatch(nodePatch);
+    }
+
+    public String baseValue() {
+        return this.value.split("-", 2)[0];
+    }
+
     @Override
     public int compareTo(@NotNull ServerPatch other) {
-        return compareNumbers(this.value.split("\\."), other.value.split("\\."));
+        return compareNumbers(this.baseValue().split("\\."), other.baseValue().split("\\."));
     }
 
     private static int compareNumbers(String[] left, String[] right) {
