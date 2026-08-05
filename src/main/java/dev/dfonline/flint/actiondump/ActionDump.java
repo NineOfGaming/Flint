@@ -9,6 +9,7 @@ import dev.dfonline.flint.actiondump.gson.ComponentGson;
 import dev.dfonline.flint.actiondump.particle.ParticleType;
 import dev.dfonline.flint.actiondump.potion.PotionType;
 import dev.dfonline.flint.actiondump.shop.CosmeticType;
+import dev.dfonline.flint.actiondump.shop.ShopType;
 import dev.dfonline.flint.actiondump.sound.SoundType;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.Nullable;
@@ -27,7 +28,8 @@ public record ActionDump(
         ValueCategory[] soundCategories,
         SoundType[] sounds,
         PotionType[] potions,
-        CosmeticType[] cosmetics
+        CosmeticType[] cosmetics,
+        ShopType[] shops
 ) {
 
     private static class Instance {

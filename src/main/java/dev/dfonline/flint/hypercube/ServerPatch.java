@@ -41,7 +41,7 @@ public record ServerPatch(String value) implements Comparable<ServerPatch> {
 
     public ServerPatch forNode(@Nullable Node node) {
         String basePatch = this.baseValue();
-        String nodePatch = node == null || node.isMain() || node == Node.PRIVATE
+        String nodePatch = node == null || node.isMain() || node == Node.PRIVATE || node == Node.EVENT
                 ? basePatch
                 : basePatch + "-" + node.getId();
 

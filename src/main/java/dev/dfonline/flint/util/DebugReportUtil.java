@@ -1,5 +1,6 @@
 package dev.dfonline.flint.util;
 
+import dev.dfonline.flint.actiondump.ActionDump;
 import dev.dfonline.flint.hypercube.PlayerBadge;
 import dev.dfonline.flint.hypercube.PlayerLocation;
 import dev.dfonline.flint.hypercube.PlayerProfile;
@@ -63,6 +64,34 @@ public final class DebugReportUtil {
         return report;
     }
 
+    public static Component formatActionDumpSummary(ActionDump actionDump, String fileSize, String generated) {
+        Component report = debugReport("Action Dump Test");
+        report = appendValue(report, "Version", actionDump.version());
+        report = appendValue(report, "File Size", fileSize);
+        report = appendValue(report, "Generated (File Timestamp)", generated);
+        report = appendSection(report, "Entries");
+        report = appendValue(report, "Codeblocks", length(actionDump.codeblocks()));
+        report = appendValue(report, "Actions", length(actionDump.actions()));
+        report = appendValue(report, "Game Value Categories", length(actionDump.gameValueCategories()));
+        report = appendValue(report, "Game Values", length(actionDump.gameValues()));
+        report = appendValue(report, "Particle Categories", length(actionDump.particleCategories()));
+        report = appendValue(report, "Particles", length(actionDump.particles()));
+        report = appendValue(report, "Sound Categories", length(actionDump.soundCategories()));
+        report = appendValue(report, "Sounds", length(actionDump.sounds()));
+        report = appendValue(report, "Potions", length(actionDump.potions()));
+        report = appendValue(report, "Cosmetics", length(actionDump.cosmetics()));
+        return appendValue(report, "Shops", length(actionDump.shops()));
+    }
+
+    public static Component formatActionDumpEntry(String entryName, int index, String json) {
+        Component report = debugReport("Action Dump Entry");
+        report = appendValue(report, "Type", entryName);
+        report = appendValue(report, "Index", index);
+        report = appendSection(report, "Data");
+        return report.append(Component.newline())
+                .append(Component.text(json, PaletteColor.WHITE));
+    }
+
     private static Component debugReport(String title) {
         return Component.text(title, PaletteColor.PINK_LIGHT);
     }
@@ -97,6 +126,10 @@ public final class DebugReportUtil {
 
     private static String readableText(net.minecraft.text.Text value) {
         return value == null ? readable((Object) null) : readable(value.getString());
+    }
+
+    private static int length(Object[] entries) {
+        return entries == null ? 0 : entries.length;
     }
 
 }

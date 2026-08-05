@@ -13,6 +13,7 @@ import dev.dfonline.flint.actiondump.ActionDumpFormat;
 import dev.dfonline.flint.feature.trait.ChatListeningFeature;
 import dev.dfonline.flint.feature.trait.PacketListeningFeature;
 import dev.dfonline.flint.hypercube.Node;
+import dev.dfonline.flint.hypercube.PlayerLocation;
 import dev.dfonline.flint.hypercube.ServerPatch;
 import dev.dfonline.flint.hypercube.ServerPatches;
 import dev.dfonline.flint.util.ComponentUtil;
@@ -73,7 +74,7 @@ public class GetActionDumpFeature implements ChatListeningFeature, PacketListeni
         }
 
         String playerName = Flint.getClient().player.getGameProfile().name();
-        return LocateFeature.requestLocate(playerName).thenApply(location -> location.node());
+        return LocateFeature.requestLocate(playerName).thenApply(PlayerLocation::node);
     }
 
     private static void startActionDump(boolean allowNonObtainableActionDumpNodes, Node node) {
