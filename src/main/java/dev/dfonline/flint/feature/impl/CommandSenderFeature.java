@@ -24,14 +24,10 @@ public final class CommandSenderFeature implements PacketListeningFeature, Ticke
     private static final ArrayDeque<String> queue = new ArrayDeque<>();
 
     public static void queue(String command) {
-        queueCommand(command);
-    }
-
-    public static void queueCommand(String command) {
         queue.add(normalizeCommand(command));
     }
 
-    static void queueInternalCommand(String command) {
+    static void queueInternal(String command) {
         priorityQueue.add(normalizeCommand(command));
     }
 

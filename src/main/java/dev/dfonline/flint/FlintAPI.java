@@ -333,7 +333,7 @@ public final class FlintAPI {
      * @param command The command to send, with or without a leading slash.
      */
     public static void queueCommand(String command) {
-        CommandSenderFeature.queueCommand(command);
+        CommandSenderFeature.queue(command);
     }
 
 }

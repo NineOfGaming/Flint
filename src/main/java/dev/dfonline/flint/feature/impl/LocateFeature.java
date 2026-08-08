@@ -69,7 +69,7 @@ public class LocateFeature implements PacketListeningFeature {
             awaitingResponse = true;
             Pair<String, CompletableFuture<PlayerLocation>> currentRequest = locateRequests.peek();
 
-            CommandSenderFeature.queueInternalCommand("locate " + currentRequest.first());
+            CommandSenderFeature.queueInternal("locate " + currentRequest.first());
         }
     }
 
