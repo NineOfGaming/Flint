@@ -29,6 +29,7 @@ import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.kyori.adventure.platform.modcommon.MinecraftAudiences;
 import net.kyori.adventure.platform.modcommon.MinecraftClientAudiences;
 import net.minecraft.client.MinecraftClient;
@@ -39,6 +40,11 @@ public class Flint implements ClientModInitializer {
 
     public static final String MOD_ID = "flint";
     public static final String MOD_NAME = "Flint";
+    public static final String MOD_VERSION = FabricLoader.getInstance()
+            .getModContainer(MOD_ID)
+            .map(container -> container.getMetadata().getVersion().getFriendlyString())
+            .orElse("unknown");
+
     public static final FeatureManager FEATURE_MANAGER = new FeatureManager();
     public static final MinecraftAudiences AUDIENCE = MinecraftClientAudiences.builder().build();
 
