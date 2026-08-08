@@ -109,7 +109,7 @@ public boolean shouldShowPlotOverlay() {
     Plot plot = Flint.getUser().getPlot();
     return Flint.getUser().isInPlay()
             && plot != null
-            && plot.getHandle().equals("myplot");
+            && plot.getId() == 12345;
 }
 ```
 
