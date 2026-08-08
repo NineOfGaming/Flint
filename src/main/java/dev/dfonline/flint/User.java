@@ -46,6 +46,13 @@ public final class User {
         return this.locationConfirmed;
     }
 
+    /**
+     * @return Whether the client is currently connected to DiamondFire.
+     */
+    public boolean isOnDiamondFire() {
+        return !this.mode.isNone();
+    }
+
     public boolean isAtSpawn() {
         return this.mode.isAtSpawn();
     }

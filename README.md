@@ -86,9 +86,13 @@ public void error() {
 ### Mode Tracking
 
 Flint tracks the user's current mode and optionally the plot and node they are on, you can access this info using  
-**Flint.getUser().getMode()**, **Flint.getUser().getPlot()**, and **Flint.getUser().getNode()**.  
+**Flint.getUser().getMode()**, **Flint.getUser().getPlot()**, and **Flint.getUser().getNode()**.
+
+Use **Flint.getUser().isOnDiamondFire()** to check whether the client is currently connected to DiamondFire.
+
 Use **Flint.getUser().isLocationConfirmed()** to check whether the current location state has been
-confirmed by `/locate`, or is only Flint's best currently inferred state.  
+confirmed by `/locate`, or is only Flint's best currently inferred state.
+
 Once the plot's development origin is known, **Flint.getUser().getPlotPosition()** returns the player's  
 relative position in plot coordinates.
 
