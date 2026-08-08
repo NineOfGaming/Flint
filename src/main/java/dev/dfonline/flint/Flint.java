@@ -36,7 +36,6 @@ import net.minecraft.client.MinecraftClient;
 
 public class Flint implements ClientModInitializer {
 
-    @SuppressWarnings("unused")
     public static final String MOD_ID = "flint";
     public static final String MOD_NAME = "Flint";
     public static final FeatureManager FEATURE_MANAGER = new FeatureManager();

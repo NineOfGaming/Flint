@@ -103,7 +103,6 @@ public class Plot {
         return this.owner;
     }
 
-    @SuppressWarnings("unused")
     public String getOwnerName() {
         return this.owner;
     }
