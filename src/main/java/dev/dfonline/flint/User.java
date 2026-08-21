@@ -23,6 +23,7 @@ public final class User {
     private @NotNull Mode mode = Mode.NONE;
     private @Nullable Plot plot;
     private @Nullable Node node;
+    private @Nullable String privateNodeId;
     private @Nullable PlayerProfile profile;
     private boolean locationConfirmed = false;
 
@@ -164,9 +165,25 @@ public final class User {
         return this.node;
     }
 
+    /**
+     * Gets the specific ID of the private node the client is currently on.
+     *
+     * @return An ID such as {@code private14}, or {@code null} when the client
+     * is not on a numbered private node or the location is not known.
+     */
+    public @Nullable String getPrivateNodeId() {
+        return this.privateNodeId;
+    }
+
     @ApiStatus.Internal
     public void setNode(@Nullable Node node) {
+        this.setNode(node, null);
+    }
+
+    @ApiStatus.Internal
+    public void setNode(@Nullable Node node, @Nullable String privateNodeId) {
         this.node = node;
+        this.privateNodeId = node == Node.PRIVATE ? privateNodeId : null;
     }
 
     @ApiStatus.Internal

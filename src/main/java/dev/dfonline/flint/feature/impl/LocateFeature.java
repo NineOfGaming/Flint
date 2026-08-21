@@ -133,9 +133,11 @@ public class LocateFeature implements PacketListeningFeature {
 
         Plot plot = parsePlot(matcher);
 
-        Node node = Node.fromName(matcher.group("node"));
+        String nodeName = matcher.group("node");
+        Node node = Node.fromName(nodeName);
+        String privateNodeId = Node.privateNodeIdFromName(nodeName);
 
-        return new PlayerLocation(username, mode, plot, node);
+        return new PlayerLocation(username, mode, plot, node, privateNodeId);
     }
 
     private static @Nullable Plot parsePlot(Matcher matcher) {

@@ -1,7 +1,11 @@
 package dev.dfonline.flint.hypercube;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public enum Node {
 
@@ -25,6 +29,7 @@ public enum Node {
 
     private static final Map<String, Node> ID_MAP = new HashMap<>();
     private static final Map<String, Node> NAME_MAP = new HashMap<>();
+    private static final Pattern PRIVATE_NODE_NAME_PATTERN = Pattern.compile("^Private Node (?<number>\\d+)$");
 
     static {
         for (Node node : values()) {
@@ -51,6 +56,25 @@ public enum Node {
         if(serverName.startsWith("Private Node")) return PRIVATE;
 
         return NAME_MAP.get(serverName);
+    }
+
+    /**
+     * Gets the specific ID from a private node's display name.
+     *
+     * <p>The general private node ID remains {@code private}; for example,
+     * {@code Private Node 14} has the specific private node ID {@code private14}.</p>
+     *
+     * @param serverName The node name.
+     * @return The specific private node ID, or {@code null} when the name is not
+     * a numbered private node.
+     */
+    public static @Nullable String privateNodeIdFromName(String serverName) {
+        Matcher matcher = PRIVATE_NODE_NAME_PATTERN.matcher(serverName);
+        if (!matcher.matches()) {
+            return null;
+        }
+
+        return PRIVATE.id + matcher.group("number");
     }
 
     public String getId() {

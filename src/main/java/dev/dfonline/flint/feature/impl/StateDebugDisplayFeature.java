@@ -47,6 +47,7 @@ public class StateDebugDisplayFeature implements RenderedFeature {
         texts.add(formatValue("Is Editor", user.isEditor() + ""));
         texts.add(formatValue("Node", ObjectUtil.toString(user.getNode(), Node::getName)));
         texts.add(formatValue("Node Id", ObjectUtil.toString(user.getNode(), Node::getId)));
+        texts.add(formatValue("Private Node Id", readable(user.getPrivateNodeId())));
         texts.add(formatValue("Patch", ObjectUtil.toString(ServerPatches.currentForNode(user.getNode()), ServerPatch::value)));
         texts.add(formatValue("Command Queue", CommandSenderFeature.queueSize() + ""));
         texts.add(formatValue("Command Rate Limited", CommandSenderFeature.isRateLimited() + ""));

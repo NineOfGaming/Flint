@@ -20,6 +20,7 @@ public final class DebugReportUtil {
         report = appendValue(report, "Node", locate.node() == null ? null : locate.node().getName());
         report = appendValue(report, "Node Enum", locate.node() == null ? null : locate.node().name());
         report = appendValue(report, "Node Id", locate.node() == null ? null : locate.node().getId());
+        report = appendValue(report, "Private Node Id", locate.privateNodeId());
 
         Plot plot = locate.plot();
         if (plot == null) {

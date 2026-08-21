@@ -223,7 +223,7 @@ public class ModeTrackerFeature implements PacketListeningFeature, TickedFeature
         }
 
         Flint.getUser().setLocationConfirmed(true);
-        Flint.getUser().setNode(locate.node());
+        Flint.getUser().setNode(locate.node(), locate.privateNodeId());
 
         Vec3i newOrigin;
         if (locate.mode() == Mode.DEV) {

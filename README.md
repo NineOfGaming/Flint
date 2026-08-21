@@ -88,6 +88,9 @@ public void error() {
 Flint tracks the user's current mode and optionally the plot and node they are on, you can access this info using  
 **Flint.getUser().getMode()**, **Flint.getUser().getPlot()**, and **Flint.getUser().getNode()**.
 
+When the user is on a numbered private node, **Flint.getUser().getPrivateNodeId()** returns its specific ID,  
+such as `private14`. The general node remains **Node.PRIVATE** and its ID remains `private`.
+
 Use **Flint.getUser().isOnDiamondFire()** to check whether the client is currently connected to DiamondFire.
 
 Use **Flint.getUser().isLocationConfirmed()** to check whether the current location state has been
@@ -157,7 +160,7 @@ Ranks are exposed as both visible `PlayerRank` entries and category levels throu
 
 #### PlayerLocation
 
-Stores location data parsed from `/locate`, including mode, plot, and node.
+Stores location data parsed from `/locate`, including mode, plot, node, and the specific private node ID when available.
 
 #### Node
 
