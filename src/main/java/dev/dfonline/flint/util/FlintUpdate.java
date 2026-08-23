@@ -91,11 +91,18 @@ public final class FlintUpdate {
     }
 
     public static void sendUpdateMessage() {
-        if (latestVersion == null || Objects.equals(Flint.MOD_VERSION, latestVersion) || Objects.equals(Flint.MOD_VERSION, UNKNOWN_VERSION)) {
+        if (latestVersion == null || Flint.MOD_VERSION == null || Objects.equals(Flint.MOD_VERSION, latestVersion) || Objects.equals(Flint.MOD_VERSION, UNKNOWN_VERSION)) {
             return;
         }
 
         try {
+            int latest = Integer.parseInt(latestVersion);
+            int current = Integer.parseInt(Flint.MOD_VERSION);
+
+            if (latest <= current) {
+                return;
+            }
+
             // We are outdated, inform the user.
             if (Flint.getClient().player != null) {
                 Flint.getUser().sendMessage(new InfoMessage("flint.update",
@@ -106,7 +113,6 @@ public final class FlintUpdate {
                                 .hoverEvent(HoverEvent.showText(Component.text(MODRINTH_URL, PaletteColor.GRAY_LIGHT)))
                 ));
             }
-        } catch (NumberFormatException ignored) {
-        }
+        } catch (NumberFormatException ignored) {}
     }
 }
